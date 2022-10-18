@@ -36,3 +36,9 @@ There are `r sum(str_detect(colnames(cosmetics),"BI"))` attitude items that are 
 ```{r load2, include=FALSE, message=FALSE, warning=FALSE}
 load(find_root_file("data/benefits.Rdata", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+## Canonical correlation analysis
+
+
+## Split-half approach
