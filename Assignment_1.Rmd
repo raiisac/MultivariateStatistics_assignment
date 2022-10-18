@@ -1,0 +1,38 @@
+---
+title: "Multivariate statistics: Assignment 1"
+subtitle: "Team 27"
+author: 
+  - "Raïsa Carmen"
+  - "Marco Chi Chung Fong"
+  - "Wenting Jiang"
+  - "Chin Wei Ma"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rprojroot)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Task 1
+
+```{r load, include=FALSE, message=FALSE, warning=FALSE}
+load(find_root_file("data/cosmetics.Rdata", 
+     criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+## CFA to construct a measurement model for the Attitude items
+There are `r sum(str_detect(colnames(cosmetics),"Attitude"))` attitude items that are scored on a five-point Likert scale. 
+
+## CFA to construct a measurement model for the Behavior-Intention items
+There are `r sum(str_detect(colnames(cosmetics),"BI"))` attitude items that are scored on a five-point Likert scale. 
+
+## Structural equation model to evaluate the impact of attitude on behavior intention
+
+# Task 2
+
+```{r load2, include=FALSE, message=FALSE, warning=FALSE}
+load(find_root_file("data/benefits.Rdata", 
+     criterion = has_file("MultivariateStatistics_assignment.Rproj")))
