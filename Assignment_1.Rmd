@@ -1,13 +1,14 @@
 ---
-title: "Multivariate statistics: Assignment 1"
-subtitle: "Team 27"
-author: 
-  - "Raïsa Carmen"
-  - "Marco Chi Chung Fong"
-  - "Wenting Jiang"
-  - "Chin Wei Ma"
+documentclass: article
+fontsize: 12pt
 date: "`r Sys.Date()`"
-output: pdf_document
+output: 
+  bookdown::pdf_document2: 
+    toc: false
+    latex_engine: xelatex
+    includes:
+      in_header: preamble.sty
+      before_body: titlepage.sty
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
