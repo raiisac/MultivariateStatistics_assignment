@@ -17,6 +17,7 @@ library(tidyverse)
 library(rprojroot)
 library(lavaan)
 library(tidySEM)#to graphically represent SEM
+library(kableExtra)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -33,7 +34,7 @@ colnames(cosmetics) <- str_replace(colnames(cosmetics),
 ## CFA to construct a measurement model for the Attitude items
 There are `r sum(str_detect(colnames(cosmetics),"Attitude"))` attitude items that are scored on a five-point Likert scale.
 
-We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated. Figure \@ref(fig:CFA1graphical) shows a graphical representation of the model, including all correlations and 
+We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated. Table \@ref(tab:CFA1performance) shows several performance measures for the model. Figure \@ref(fig:CFA1graphical) shows a graphical representation of the model, including all correlations and variances.
 
 ```{r CFA1, include=FALSE, message=FALSE, warning=FALSE}
 #We first center the variables
@@ -50,7 +51,44 @@ simplemodel1 <-
   organic ~~ crueltyfree
   packaging ~~ crueltyfree'
 fit1 <- cfa(simplemodel1, sample.cov = covmat1, sample.nobs = nrow(cosmetics))
-summary(fit1, fit.measure = T)
+sum_fit1 <- summary(fit1, fit.measure = T)
+```
+
+```{r CFA1performance, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  parameter = c('user model Chisq. (df, p-value)',
+                "baseline model Chisq. (df, p-value)",
+                "comparative fit index (CFI)",
+                "Tucker-Lewis index (TLI)",
+                "Loglik user model (H0)",
+                "Loglik unrestricted model(H1)",
+                "Akaike (AIC)",
+                "Bayesian (BIC)",
+                "RMSEA (ll,ul) (pvalue)",
+                "Standardized root mean square residual"),
+  value = c(sprintf("%.2f (%.0f, %.2f)", sum_fit1$fit["chisq"],
+                    sum_fit1$fit["df"], sum_fit1$fit["pvalue"]),
+            sprintf("%.2f (%.0f, %.2f)", sum_fit1$fit["baseline.chisq"],
+                    sum_fit1$fit["baseline.df"], 
+                    sum_fit1$fit["baseline.pvalue"]),
+            round(sum_fit1$fit["cfi"], digits = 3),
+            round(sum_fit1$fit["tli"], digits = 3),
+            round(sum_fit1$fit["logl"], digits = 3),
+            round(sum_fit1$fit["unrestricted.logl"], digits = 3),
+            round(sum_fit1$fit["aic"], digits = 3),
+            round(sum_fit1$fit["bic"], digits = 3),
+            sprintf("%.2f (%.2f, %.2f) (%.2f)", sum_fit1$fit["rmsea"],
+                    sum_fit1$fit["rmsea.ci.lower"], 
+                    sum_fit1$fit["rmsea.ci.upper"], 
+                    sum_fit1$fit["rmsea.pvalue"]),
+            round(sum_fit1$fit["srmr"], digits = 3))
+) %>%
+  kable(col.names = c("Performance measure","Value"),
+        align = "lc",
+        caption = "Performance of the simple model for the attitudes",
+        booktabs = TRUE) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position")
+
 ```
 
 
