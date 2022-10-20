@@ -4,6 +4,7 @@ fontsize: 12pt
 date: "`r Sys.Date()`"
 output: 
   bookdown::pdf_document2: 
+    fig_caption: yes
     toc: false
     latex_engine: xelatex
     includes:
@@ -14,6 +15,8 @@ output:
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(rprojroot)
+library(lavaan)
+library(tidySEM)#to graphically represent SEM
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -22,13 +25,51 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r load, include=FALSE, message=FALSE, warning=FALSE}
 load(find_root_file("data/cosmetics.Rdata", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+colnames(cosmetics) <- str_replace(colnames(cosmetics), 
+                                   pattern = "Attitude_", 
+                                   "A_") #shorten the names of the variables
 ```
 
 ## CFA to construct a measurement model for the Attitude items
-There are `r sum(str_detect(colnames(cosmetics),"Attitude"))` attitude items that are scored on a five-point Likert scale. 
+There are `r sum(str_detect(colnames(cosmetics),"Attitude"))` attitude items that are scored on a five-point Likert scale.
+
+We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated. Figure \@ref(fig:CFA1graphical) shows a graphical representation of the model, including all correlations and 
+
+```{r CFA1, include=FALSE, message=FALSE, warning=FALSE}
+#We first center the variables
+cosmetics_center <- scale(cosmetics, center = TRUE)
+covmat1 <- cov(cosmetics_center[,1:9])
+simplemodel1 <- 
+'organic = ~NA*A_organic1 + A_organic2 + A_organic3
+  packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
+  crueltyfree = ~A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  organic ~~ 1*organic
+  packaging ~~ 1*packaging
+  crueltyfree ~~ 1*crueltyfree
+  organic ~~ packaging
+  organic ~~ crueltyfree
+  packaging ~~ crueltyfree'
+fit1 <- cfa(simplemodel1, sample.cov = covmat1, sample.nobs = nrow(cosmetics))
+summary(fit1, fit.measure = T)
+```
+
+
+```{r CFA1graphical, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "A_organic1", "A_organic2", "A_organic3", 
+                  "A_packaging1", "A_packaging2", "A_packaging3", 
+                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3", 
+                  rows = 2)
+p <- graph_sem(model = fit1, layout = lay)
+if (!file.exists("figures/CFA1graphical.png")) {
+  ggsave("figures/CFA1graphical.png", p, 
+         device = "png", width = 11, height = 4)}
+knitr::include_graphics(find_root_file("figures/CFA1graphical.png", 
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
 
 ## CFA to construct a measurement model for the Behavior-Intention items
-There are `r sum(str_detect(colnames(cosmetics),"BI"))` attitude items that are scored on a five-point Likert scale. 
+There are `r sum(str_detect(colnames(cosmetics),"BI"))` behavior-intention items that are scored on a five-point Likert scale. 
 
 ## Structural equation model to evaluate the impact of attitude on behavior intention
 
