@@ -8,7 +8,6 @@ compositerel<-function(x){
   B<-sum(1-x^2)
   return(A/(A+B))
 }
-
 setwd('/Users/wentingjiang/Desktop/Multi')
 #load data
 load("cosmetics.Rdata")
@@ -31,7 +30,6 @@ cfa1<-' Att_organic=~1*Attitude_organic1+Attitude_organic2+Attitude_organic3
          Att_organic ~~Att_packaging+Att_crueltyfree
          Att_crueltyfree~~Att_packaging
         '
-
 #fit model on covariance matrix
 fitcfa1<-cfa(cfa1,cess2)
 
@@ -43,6 +41,13 @@ summary(fitcfa1,fit.measures=TRUE)
 
 #print standardized solution
 standardizedSolution(fitcfa1)
+
+#compute residual correlations (crossprod(t(fact3vm$loadings))+diag(fact3vm$uniquenesses))
+cor_table <- residuals(fitcfa1, type = "cor")$cov
+
+#compute number of residual correlations with absolute value larger than 0.05 below the diagonal
+n<-sum(ifelse(abs(cor_table)>0.05,1,0))/2
+print(n/(9*8/2))
 
 #reliability factor scores
 d<-standardizedSolution(fitcfa1)
@@ -58,7 +63,6 @@ factorscore<-c("Att_organic","Att_packaging","Att_crueltyfree")
 reliability<-round(c(compositerel(d[1:3,4]),compositerel(d[4:6,4]),compositerel(d[7:9,4])),3)
 data.frame(factorscore,reliability)
 
-## To DO here
 #####################################################################
 #confirmatory factor analysis model with correlated latent variables and correlated error terms 
 ######################################################################
@@ -94,3 +98,10 @@ summary(fitcfa1,fit.measures=TRUE)
 
 #print standardized solution
 standardizedSolution(fitcfa1)
+
+#compute residual correlations
+cor_table <- residuals(fitcfa1, type = "cor")$cov
+
+#compute number of residual correlations with absolute value larger than 0.05 below the diagonal
+n<-sum(ifelse(abs(cor_table)>0.05,1,0))/2
+print(n/(9*8/2))
