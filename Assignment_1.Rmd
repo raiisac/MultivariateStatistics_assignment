@@ -273,11 +273,15 @@ corrmodel1 <-
 fit1corr_new <- cfa(corrmodel1, sample.cov = covmat1, sample.nobs = nrow(cosmetics))
 sum_fit1corr_new <- summary(fit1corr_new, fit.measure = T)
 sum_fit1_std_corr_new <- standardizedSolution(fit1corr_new)
+
+#or try modification index
+#modificationIndices(fit1corr) --> should add A_organic1 ~~   A_packaging2
 ```
 An anova test between the two models shows that the model with correlated error terms is significantly better ( p-value `r anovap`). 
 
 Since, however, the performance measures (Table \@ref(tab:CFA1performancecorr)) shows less-than-perfect fit, we look at the residual correlations and notice that `r n` (`r round(n/(9*8/2)*100,2)`%) of all correlations are larger than 0.05 or smaller than -0.05. Three of the largest residual correlations involved the correlations between A_organic3, A_packaging3, and A_crueltyfree3 which leads us to believe that the assumption that these correlations are equal does not hold. Indeed, a model that relaxes this assumption has a good TLI (`r unname(round(sum_fit1corr_new$fit["tli"], digits = 3))`), CFI (`r unname(round(sum_fit1corr_new$fit["cfi"], digits = 3))`), RMSEA (`r unname(round(sum_fit1corr_new$fit["rmsea"], digits = 3))`), and SRMR (`r unname(round(sum_fit1corr_new$fit["srmr"], digits = 3))`). The Chi-square goodness of fit test still has a p-value of `r unname(round(sum_fit1corr_new$fit["pvalue"], digits = 3))`
 
+\clearpage 
 
 ## CFA to construct a measurement model for the Behavior-Intention items
 There are `r sum(str_detect(colnames(cosmetics),"BI"))` behavior-intention items that are scored on a five-point Likert scale. 
@@ -482,46 +486,161 @@ knitr::kable(
 
 ### Conclusion
 
-```{r CFA1LRtestBI, echo=TRUE, message=FALSE, warning=FALSE}
-anova(fit1corr, fit1)
-```
+```{r CFA1LRtestBI, echo=FALSE, message=FALSE, warning=FALSE}
+test <- anova(fit1corr, fit1)
+anovap <-  ifelse(test$`Pr(>Chisq)`[2]<0.001,"$<0.001$",ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.01$", ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.05$","$>0.05$")))
+cor_table <- residuals(fit1corr, type = "cor")$cov
 
+#compute number of residual correlations with absolute value larger than 0.05 below the diagonal
+n<-sum(ifelse(abs(cor_table)>0.05,1,0))/2
+
+```
+An anova test between the two models shows that the model with correlated error terms is significantly better ( p-value `r anovap`). 
+
+The performance measures (Table \@ref(tab:CFA1performancecorrBI)) show a good fit and most residual correlations are between -0.05 and 0.05 (only `r n` have an absolute value that is slightly higher with a maximum of `r round(max(abs(cor_table)),3)`). We shall thus keep this model as the final model.
 
 ## Structural equation model to evaluate the impact of attitude on behavior intention
 
 ```{r SEM, echo=FALSE, message=FALSE, warning=FALSE}
 cormat <- cov(cosmetics_std)
-sem1 <- 'BI_organic = ~NA*BI_organic1 + BI_organic2 + BI_organic3
-  BI_packaging = ~NA*BI_packaging1 + BI_packaging2 + BI_packaging3
-  BI_crueltyfree = ~NA*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
-  BI_organic ~~ 1*BI_organic
-  BI_packaging ~~ 1*BI_packaging
-  BI_crueltyfree ~~ 1*BI_crueltyfree
+sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
+  BI_packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
+  BI_crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
+  
+  BI_organic1 ~~c*BI_packaging1 
+  BI_organic1 ~~c*BI_crueltyfree1
+  BI_packaging1 ~~c*BI_crueltyfree1
+  
+  BI_organic2 ~~d*BI_packaging2 
+  BI_organic2 ~~d*BI_crueltyfree2
+  BI_packaging2 ~~d*BI_crueltyfree2
+  
+  BI_organic3 ~~e*BI_packaging3 
+  BI_organic3 ~~e*BI_crueltyfree3
+  BI_packaging3 ~~e*BI_crueltyfree3
+  
+  BI_organic ~~ BI_organic
+  BI_packaging ~~ BI_packaging
+  BI_crueltyfree ~~ BI_crueltyfree
   BI_organic ~~ BI_packaging
   BI_organic ~~ BI_crueltyfree
   BI_packaging ~~ BI_crueltyfree
-  Att_organic = ~NA*A_organic1 + A_organic2 + A_organic3
-  Att_packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
-  Att_crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
-  Att_organic ~~ 1*Att_organic
-  Att_packaging ~~ 1*Att_packaging
-  Att_crueltyfree ~~ 1*Att_crueltyfree
-  Att_organic ~~ Att_packaging
-  Att_organic ~~ Att_crueltyfree
-  Att_packaging ~~ Att_crueltyfree
-  Att_organic ~ BI_organic
-  Att_packaging ~ BI_packaging
-  Att_crueltyfree ~ BI_crueltyfree'
-fitsem1<-sem(sem1,sample.cov=cormat, sample.nobs = nrow(cosmetics))
+  
+  A_organic = ~NA*A_organic1 + A_organic2 + A_organic3
+  A_packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
+  A_crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  A_organic1 ~~c*A_packaging1 
+  A_organic1 ~~c*A_crueltyfree1
+  A_packaging1 ~~c*A_crueltyfree1
+  
+  A_organic2 ~~d*A_packaging2 
+  A_organic2 ~~d*A_crueltyfree2
+  A_packaging2 ~~d*A_crueltyfree2
+  
+  A_organic3 ~~A_packaging3 
+  A_organic3 ~~A_crueltyfree3
+  A_packaging3 ~~A_crueltyfree3
+  
+  A_organic ~~ 1*A_organic
+  A_packaging ~~ 1*A_packaging
+  A_crueltyfree ~~ 1*A_crueltyfree
+  
+  A_organic ~~ A_packaging
+  A_organic ~~ A_crueltyfree
+  A_packaging ~~ A_crueltyfree
+  
+  #structural model
+  BI_organic ~A_organic
+  BI_packaging ~A_packaging
+  BI_crueltyfree ~A_crueltyfree
+  '
+fitsem1 <-sem(sem1,sample.cov=cormat, sample.nobs = nrow(cosmetics))
 sum_sem1 <- summary(fitsem1)
 sum_sem1_std <- standardizedSolution(fitsem1)
 ```
-With a test statistics of `r round(sum_sem1$test$standard$stat, 2)` with `r sum_sem1$test$standard$df` degrees of freedom, the chi-square p-value is `r sum_sem1$test$standard$pvalue`
+With a test statistics of `r round(sum_sem1$test$standard$stat, 2)` with `r sum_sem1$test$standard$df` degrees of freedom, the chi-square p-value is `r sum_sem1$test$standard$pvalue` which means we cannot reject the null hypothesis that the model fits well. 
  
 ```{r SEM2, echo=FALSE, message=FALSE, warning=FALSE}
+sum_sem1
 
-
+sum_sem1_std
 ```
+The structural equation model shows that all correlations between latent variables are positive and highly significant. 
+
+- an increase of one unit in attitude_organic increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_packaging increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_packaging", rhs == "A_packaging") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_crueltyfree increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_crueltyfree", rhs == "A_crueltyfree") %>% pull(est.std),3)`.
+
+These population regression coefficients are quite similar so we next test a model that imposes that all three regression coefficients are the same.
+
+### The same population regression coefficient
+```{r SEM2_1, echo=FALSE, message=FALSE, warning=FALSE}
+sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
+  BI_packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
+  BI_crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
+  
+  BI_organic1 ~~c*BI_packaging1 
+  BI_organic1 ~~c*BI_crueltyfree1
+  BI_packaging1 ~~c*BI_crueltyfree1
+  
+  BI_organic2 ~~d*BI_packaging2 
+  BI_organic2 ~~d*BI_crueltyfree2
+  BI_packaging2 ~~d*BI_crueltyfree2
+  
+  BI_organic3 ~~e*BI_packaging3 
+  BI_organic3 ~~e*BI_crueltyfree3
+  BI_packaging3 ~~e*BI_crueltyfree3
+  
+  BI_organic ~~ BI_organic
+  BI_packaging ~~ BI_packaging
+  BI_crueltyfree ~~ BI_crueltyfree
+  BI_organic ~~ BI_packaging
+  BI_organic ~~ BI_crueltyfree
+  BI_packaging ~~ BI_crueltyfree
+  
+  A_organic = ~NA*A_organic1 + A_organic2 + A_organic3
+  A_packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
+  A_crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  A_organic1 ~~c*A_packaging1 
+  A_organic1 ~~c*A_crueltyfree1
+  A_packaging1 ~~c*A_crueltyfree1
+  
+  A_organic2 ~~d*A_packaging2 
+  A_organic2 ~~d*A_crueltyfree2
+  A_packaging2 ~~d*A_crueltyfree2
+  
+  A_organic3 ~~A_packaging3 
+  A_organic3 ~~A_crueltyfree3
+  A_packaging3 ~~A_crueltyfree3
+  
+  A_organic ~~ 1*A_organic
+  A_packaging ~~ 1*A_packaging
+  A_crueltyfree ~~ 1*A_crueltyfree
+  
+  A_organic ~~ A_packaging
+  A_organic ~~ A_crueltyfree
+  A_packaging ~~ A_crueltyfree
+  
+  #structural model
+  BI_organic ~p*A_organic
+  BI_packaging ~p*A_packaging
+  BI_crueltyfree ~p*A_crueltyfree
+  '
+fitsem2 <- sem(sem2,sample.cov = cormat, sample.nobs = nrow(cosmetics))
+sum_sem2 <- summary(fitsem2)
+sum_sem2_std <- standardizedSolution(fitsem2)
+sum_sem2
+sum_sem2_std
+anovasem <- anova(fitsem1,fitsem2)
+anovasemp <- anovasem$`Pr(>Chisq)`[2]
+```
+
+Since an anova test for the two sem models has a p-value of `r round(anovasemp,3)`, we cannot reject the null hypothesis that the models are the same, meaning this new, simpler SEM fits as well as the more elaborate model.
+
+
+- an increase of one unit in attitude_organic increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_packaging increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_packaging", rhs == "A_packaging") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_crueltyfree increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_crueltyfree", rhs == "A_crueltyfree") %>% pull(est.std),3)`.
 
 # Task 2
 
