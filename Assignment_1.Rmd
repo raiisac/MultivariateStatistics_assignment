@@ -38,7 +38,7 @@ There are `r sum(str_detect(colnames(cosmetics),"A_"))` attitude items that are 
 
 ### A simple 3-factor model
 
-We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated and the factor loading of the first indicator of each latent variable is fixed to 1. We fit the model on standardized data. Table \@ref(tab:CFA1performance) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. Figure \@ref(fig:CFA1graphical) shows a graphical representation of the model, including all loadings (which are equal to the covariance between the variable and the factor since the data was first standardized), correlations and variances.
+We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated and the factor loading of the first indicator of each latent variable is fixed to 1. We fit the model on standardized data. The first columns in Table \@ref(tab:CFA1performancecorrBI) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. Figure \@ref(fig:CFA1graphical) shows a graphical representation of the model, including all loadings (which are equal to the covariance between the variable and the factor since the data was first standardized), correlations and variances.
 
 In the standardized solution, the standardized loadings represent correlations between a variable and a factor (Table \@ref(tab:CFA1standardized)) and the error variances indicate the proportion of the variance in a variable that cannot be explained by the model (Table \@ref(tab:CFA1standardized)).
 
@@ -73,7 +73,7 @@ data.frame(
                 "Bayesian (BIC)",
                 "RMSEA (ll,ul)",
                 "Standardized root mean square residual"),
-  value = c(sprintf("%.2f (%.0f)%s", sum_fit1$fit["chisq"],
+  model1 = c(sprintf("%.2f (%.0f)%s", sum_fit1$fit["chisq"],
                     sum_fit1$fit["df"], stars.pval(sum_fit1$fit["pvalue"])),
             sprintf("%.2f (%.0f) %s", sum_fit1$fit["baseline.chisq"],
                     sum_fit1$fit["baseline.df"], 
@@ -89,12 +89,7 @@ data.frame(
                     sum_fit1$fit["rmsea.ci.upper"], 
                     stars.pval(sum_fit1$fit["rmsea.pvalue"])),
             round(sum_fit1$fit["srmr"], digits = 3))
-) %>%
-  kable(col.names = c("Performance measure","Value"),
-        align = "lc",
-        caption = "Performance of the simple model for the attitudes.",
-        booktabs = TRUE) %>%
-  kableExtra::kable_styling(latex_options = "HOLD_position")
+) -> mod1performance
 
 ```
 
@@ -176,7 +171,7 @@ data.frame(
                 "Bayesian (BIC)",
                 "RMSEA (ll,ul)",
                 "Standardized root mean square residual"),
-  value = c(sprintf("%.2f (%.0f)%s", sum_fit1corr$fit["chisq"],
+  model2 = c(sprintf("%.2f (%.0f)%s", sum_fit1corr$fit["chisq"],
                     sum_fit1corr$fit["df"], stars.pval(sum_fit1corr$fit["pvalue"])),
             sprintf("%.2f (%.0f) %s", sum_fit1$fit["baseline.chisq"],
                     sum_fit1corr$fit["baseline.df"], 
@@ -192,12 +187,7 @@ data.frame(
                     sum_fit1corr$fit["rmsea.ci.upper"], 
                     stars.pval(sum_fit1corr$fit["rmsea.pvalue"])),
             round(sum_fit1corr$fit["srmr"], digits = 3))
-) %>%
-  kable(col.names = c("Performance measure","Value"),
-        align = "lc",
-        caption = "Performance of the model for the attitudes with correlated error terms.",
-        booktabs = TRUE) %>%
-  kableExtra::kable_styling(latex_options = "HOLD_position")
+) -> mod2performance
 
 ```
 
@@ -241,12 +231,15 @@ fit1acorr <- fit1corr
 
 ### Conclusion
 ```{r CFA1LRtest, echo=FALSE, message=FALSE, warning=FALSE}
+#Anova test
 test <- anova(fit1corr, fit1)
 anovap <-  ifelse(test$`Pr(>Chisq)`[2]<0.001,"$<0.001$",ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.01$", ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.05$","$>0.05$")))
+# Residual correlations
 cor_table <- residuals(fit1corr, type = "cor")$cov
 
 #compute number of residual correlations with absolute value larger than 0.05 below the diagonal
 n<-sum(ifelse(abs(cor_table)>0.05,1,0))/2
+
 corrmodel1 <- 
     'organic = ~1*A_organic1 + A_organic2 + A_organic3
   packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
@@ -274,13 +267,10 @@ corrmodel1 <-
 fit1corr_new <- cfa(corrmodel1, sample.cov = covmat1, sample.nobs = nrow(cosmetics))
 sum_fit1corr_new <- summary(fit1corr_new, fit.measure = T)
 sum_fit1_std_corr_new <- standardizedSolution(fit1corr_new)
-
-#or try modification index
-#modificationIndices(fit1corr) --> should add A_organic1 ~~   A_packaging2
 ```
 An anova test between the two models shows that the model with correlated error terms is significantly better ( p-value `r anovap`). 
 
-Since, however, the performance measures (Table \@ref(tab:CFA1performancecorr)) shows less-than-perfect fit, we look at the residual correlations and notice that `r n` (`r round(n/(9*8/2)*100,2)`%) of all correlations are larger than 0.05 or smaller than -0.05. Three of the largest residual correlations involved the correlations between A_organic3, A_packaging3, and A_crueltyfree3 which leads us to believe that the assumption that these correlations are equal does not hold. Indeed, a model that relaxes this assumption has a good TLI (`r unname(round(sum_fit1corr_new$fit["tli"], digits = 3))`), CFI (`r unname(round(sum_fit1corr_new$fit["cfi"], digits = 3))`), RMSEA (`r unname(round(sum_fit1corr_new$fit["rmsea"], digits = 3))`), and SRMR (`r unname(round(sum_fit1corr_new$fit["srmr"], digits = 3))`). The Chi-square goodness of fit test still has a p-value of `r unname(round(sum_fit1corr_new$fit["pvalue"], digits = 3))`
+Since, however, the performance measures (second column in Table \@ref(tab:CFA1performancecorrBI)) shows less-than-perfect fit, we look at the residual correlations and notice that `r n` (`r round(n/(9*8/2)*100,2)`%) of all correlations are larger than 0.05 or smaller than -0.05. Three of the largest residual correlations involved the correlations between A_organic3, A_packaging3, and A_crueltyfree3 which leads us to believe that the assumption that these correlations are equal does not hold. Indeed, a model that relaxes this assumption has a good TLI (`r unname(round(sum_fit1corr_new$fit["tli"], digits = 3))`), CFI (`r unname(round(sum_fit1corr_new$fit["cfi"], digits = 3))`), RMSEA (`r unname(round(sum_fit1corr_new$fit["rmsea"], digits = 3))`), and SRMR (`r unname(round(sum_fit1corr_new$fit["srmr"], digits = 3))`). The Chi-square goodness of fit test still has a p-value of `r unname(round(sum_fit1corr_new$fit["pvalue"], digits = 3))`. We will use this model 
 
 \clearpage 
 
@@ -318,7 +308,7 @@ data.frame(
                 "Bayesian (BIC)",
                 "RMSEA (ll,ul)",
                 "Standardized root mean square residual"),
-  value = c(sprintf("%.2f (%.0f)%s", sum_fit1$fit["chisq"],
+  model3 = c(sprintf("%.2f (%.0f)%s", sum_fit1$fit["chisq"],
                     sum_fit1$fit["df"], stars.pval(sum_fit1$fit["pvalue"])),
             sprintf("%.2f (%.0f) %s", sum_fit1$fit["baseline.chisq"],
                     sum_fit1$fit["baseline.df"], 
@@ -334,12 +324,7 @@ data.frame(
                     sum_fit1$fit["rmsea.ci.upper"], 
                     stars.pval(sum_fit1$fit["rmsea.pvalue"])),
             round(sum_fit1$fit["srmr"], digits = 3))
-) %>%
-  kable(col.names = c("Performance measure","Value"),
-        align = "lc",
-        caption = "Performance of the simple model for the behavior-intent items.",
-        booktabs = TRUE) %>%
-  kableExtra::kable_styling(latex_options = "HOLD_position")
+) ->mod3performance
 
 ```
 
@@ -421,7 +406,7 @@ data.frame(
                 "Bayesian (BIC)",
                 "RMSEA (ll,ul)",
                 "Standardized root mean square residual"),
-  value = c(sprintf("%.2f (%.0f)%s", sum_fit1corr$fit["chisq"],
+  model4 = c(sprintf("%.2f (%.0f)%s", sum_fit1corr$fit["chisq"],
                     sum_fit1corr$fit["df"], stars.pval(sum_fit1corr$fit["pvalue"])),
             sprintf("%.2f (%.0f) %s", sum_fit1$fit["baseline.chisq"],
                     sum_fit1corr$fit["baseline.df"], 
@@ -436,13 +421,19 @@ data.frame(
                     sum_fit1corr$fit["rmsea.ci.lower"], 
                     sum_fit1corr$fit["rmsea.ci.upper"], 
                     stars.pval(sum_fit1corr$fit["rmsea.pvalue"])),
-            round(sum_fit1corr$fit["srmr"], digits = 3))
-) %>%
-  kable(col.names = c("Performance measure","Value"),
-        align = "lc",
-        caption = "Performance of the model for the behavior-intent items with correlated error terms.",
-        booktabs = TRUE) %>%
-  kableExtra::kable_styling(latex_options = "HOLD_position")
+            round(sum_fit1corr$fit["srmr"], digits = 3))) %>%
+  left_join(mod1performance) %>%
+  left_join(mod2performance) %>%
+  left_join(mod3performance) %>%
+  dplyr::select(parameter, model1, model2, model3, model4) %>%
+  kable(booktabs = T,
+        col.names = c("parameter", "simple model", 
+                      "with correlated error terms","simple model", 
+                      "with correlated error terms")) %>%
+  add_header_above(c(" " = 1, "Attitudes" = 2, "Behavior-intention" = 2)) %>%
+  column_spec(1, width = "3cm") %>%
+  column_spec(2:5, width = "2.8cm") 
+  
 
 ```
 
@@ -498,7 +489,7 @@ n<-sum(ifelse(abs(cor_table)>0.05,1,0))/2
 ```
 An anova test between the two models shows that the model with correlated error terms is significantly better ( p-value `r anovap`). 
 
-The performance measures (Table \@ref(tab:CFA1performancecorrBI)) show a good fit and most residual correlations are between -0.05 and 0.05 (only `r n` have an absolute value that is slightly higher with a maximum of `r round(max(abs(cor_table)),3)`). We shall thus keep this model as the final model.
+The performance measures (column 4 in Table \@ref(tab:CFA1performancecorrBI)) show a good fit and most residual correlations are between -0.05 and 0.05 (only `r n` have an absolute value that is slightly higher with a maximum of `r round(max(abs(cor_table)),3)`). We shall thus keep this model as the final model.
 
 ## Structural equation model to evaluate the impact of attitude on behavior intention
 
