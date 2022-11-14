@@ -78,12 +78,16 @@ There are `r sum(str_detect(colnames(cosmetics),"BI"))` behavior-intention items
 
 # Task 2
 
+Benefits.Rdata is loaded from our terminal locally.
+
 ```{r load2, include=FALSE, message=FALSE, warning=FALSE}
 load(find_root_file("data/benefits.Rdata", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 ```
 
 ## Canonical correlation analysis
+
+We then preprocess the benefits data for the canonical correlaton analysis. A summary of the analysis is presented and redundacies are further computed.  
 
 ```{r cca, include=FALSE, message=FALSE, warning=FALSE}
 zbenefits<-benefits
@@ -111,7 +115,10 @@ round(cancor.out$structure$Y.yscores,2)
 
 ```
 
+From the canonical correlation analysis results, we can conclude that there are 4 pairs of canonical variates. However, according to the results of the hypotheses tests, we can observe that the fourth pair is not significant as the H0 cannot be rejected at he 5% significant level which the Pr(> F) is 0.1735. 
 
+Also the canonical correlation analysis results, we can observe that the first pair contributes 48.3% of the variance of the canonical variate which its canonical correlation is 0.233. In the meantime, the second one contributes 22.8% which its canonical correlation is 0.052 while the third one contributes 13.7% which its canonical correlation is 0.137.
+From the variance results, the three pairs contribute 11.78% in terms of variance for Y variables. 
 
 ## Split-half approach
 
