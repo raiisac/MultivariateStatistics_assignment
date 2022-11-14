@@ -38,9 +38,11 @@ There are `r sum(str_detect(colnames(cosmetics),"A_"))` attitude items that are 
 
 ### A simple 3-factor model
 
-We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated and the factor loading of the first indicator of each latent variable is fixed to 1. We fit the model on standardized data. The first columns in Table \@ref(tab:CFA1performancecorrBI) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. Figure \@ref(fig:CFA1graphical) shows a graphical representation of the model, including all loadings (which are equal to the covariance between the variable and the factor since the data was first standardized), correlations and variances.
+We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated and the factor loading of the first indicator of each latent variable is fixed to 1. We fit the model on standardized data. The first columns in Table \@ref(tab:CFA1performancecorrBI) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. On the other hand, composite reliability measures the reliability of the factor scores. We can see that the composite reliability values are high (Table \@ref(tab:CFA1standardized)), therefore, the factors are measured in a reliable way. Figure \@ref(fig:CFA1graphical) in the appendix shows a graphical representation of the model, including all loadings (which are equal to the covariance between the variable and the factor since the data was first standardized), correlations and variances.
 
 In the standardized solution, the standardized loadings represent correlations between a variable and a factor (Table \@ref(tab:CFA1standardized)) and the error variances indicate the proportion of the variance in a variable that cannot be explained by the model (Table \@ref(tab:CFA1standardized)).
+
+
 
 ```{r CFA1, include=TRUE, message=FALSE, warning=FALSE}
 #We first standardize the variables
@@ -67,10 +69,6 @@ data.frame(
                 "baseline model Chisq. (df)",
                 "comparative fit index (CFI)",
                 "Tucker-Lewis index (TLI)",
-                "Loglik user model (H0)",
-                "Loglik unrestricted model(H1)",
-                "Akaike (AIC)",
-                "Bayesian (BIC)",
                 "RMSEA (ll,ul)",
                 "Standardized root mean square residual"),
   model1 = c(sprintf("%.2f (%.0f)%s", sum_fit1$fit["chisq"],
@@ -80,10 +78,6 @@ data.frame(
                     stars.pval(sum_fit1$fit["baseline.pvalue"])),
             round(sum_fit1$fit["cfi"], digits = 3),
             round(sum_fit1$fit["tli"], digits = 3),
-            round(sum_fit1$fit["logl"], digits = 3),
-            round(sum_fit1$fit["unrestricted.logl"], digits = 3),
-            round(sum_fit1$fit["aic"], digits = 3),
-            round(sum_fit1$fit["bic"], digits = 3),
             sprintf("%.2f (%.2f, %.2f)%s", sum_fit1$fit["rmsea"],
                     sum_fit1$fit["rmsea.ci.lower"], 
                     sum_fit1$fit["rmsea.ci.upper"], 
@@ -116,8 +110,22 @@ t2 <- sum_fit1$pe[10:24,] %>%
   #       booktabs = TRUE,
   #       row.names = FALSE,
   #       format = "latex")
+#reliability factor scores
+compositerel<-function(x){
+  A <- (sum(x))^2
+  B <- sum(1-x^2)
+  return(A/(A+B))
+}
+
+#overview table composite reliability
+factor <- c("organic","packaging","crueltyfree")
+reliability <- round(c(compositerel(sum_fit1_std[1:3,4]),
+                     compositerel(sum_fit1_std[4:6,4]),
+                     compositerel(sum_fit1_std[7:9,4])),3)
+t3 <- data.frame(factor,reliability)
+
 knitr::kable(
-  list(t1, t2),
+  list(t1, t2, t3),
   caption = 'The solution of the simple model for the attitudes.',
   booktabs = TRUE, valign = 't'
 )
@@ -129,7 +137,7 @@ fit1a <- fit1
 
 Since the simple 3-factor model does not seem to perform well, we alter the model by including correlated error terms for all pairs of items that focus on the same aspect. We also impose equal residual correlations for all pairs of items that focus on the same aspect.
 
-```{r CFA1corr, include=FALSE, message=FALSE, warning=FALSE}
+```{r CFA1corr, include=TRUE, message=FALSE, warning=FALSE}
 corrmodel1 <- 
 'organic = ~1*A_organic1 + A_organic2 + A_organic3
   packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
@@ -159,16 +167,12 @@ sum_fit1corr <- summary(fit1corr, fit.measure = T)
 sum_fit1_std_corr <- standardizedSolution(fit1corr)
 ```
 
-```{r CFA1performancecorr, echo=FALSE, message=FALSE, warning=FALSE}
+```{r CFA1performancecorr, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE}
 data.frame(
   parameter = c('user model Chisq. (df)',
                 "baseline model Chisq. (df)",
                 "comparative fit index (CFI)",
                 "Tucker-Lewis index (TLI)",
-                "Loglik user model (H0)",
-                "Loglik unrestricted model(H1)",
-                "Akaike (AIC)",
-                "Bayesian (BIC)",
                 "RMSEA (ll,ul)",
                 "Standardized root mean square residual"),
   model2 = c(sprintf("%.2f (%.0f)%s", sum_fit1corr$fit["chisq"],
@@ -178,10 +182,6 @@ data.frame(
                     stars.pval(sum_fit1corr$fit["baseline.pvalue"])),
             round(sum_fit1corr$fit["cfi"], digits = 3),
             round(sum_fit1corr$fit["tli"], digits = 3),
-            round(sum_fit1corr$fit["logl"], digits = 3),
-            round(sum_fit1corr$fit["unrestricted.logl"], digits = 3),
-            round(sum_fit1corr$fit["aic"], digits = 3),
-            round(sum_fit1corr$fit["bic"], digits = 3),
             sprintf("%.2f (%.2f, %.2f)%s", sum_fit1corr$fit["rmsea"],
                     sum_fit1corr$fit["rmsea.ci.lower"], 
                     sum_fit1corr$fit["rmsea.ci.upper"], 
@@ -191,7 +191,7 @@ data.frame(
 
 ```
 
-```{r CFA1standardizedcorr, echo=FALSE, message=FALSE, warning=FALSE}
+```{r CFA1standardizedcorr, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE}
 t1 <- sum_fit1_std_corr[1:9,] %>%
   mutate(loading = sprintf("%s %s %s", lhs, op, rhs),
          stars = stars.pval(pvalue),
@@ -270,9 +270,9 @@ sum_fit1_std_corr_new <- standardizedSolution(fit1corr_new)
 ```
 An anova test between the two models shows that the model with correlated error terms is significantly better ( p-value `r anovap`). 
 
-Since, however, the performance measures (second column in Table \@ref(tab:CFA1performancecorrBI)) shows less-than-perfect fit, we look at the residual correlations and notice that `r n` (`r round(n/(9*8/2)*100,2)`%) of all correlations are larger than 0.05 or smaller than -0.05. Three of the largest residual correlations involved the correlations between A_organic3, A_packaging3, and A_crueltyfree3 which leads us to believe that the assumption that these correlations are equal does not hold. Indeed, a model that relaxes this assumption has a good TLI (`r unname(round(sum_fit1corr_new$fit["tli"], digits = 3))`), CFI (`r unname(round(sum_fit1corr_new$fit["cfi"], digits = 3))`), RMSEA (`r unname(round(sum_fit1corr_new$fit["rmsea"], digits = 3))`), and SRMR (`r unname(round(sum_fit1corr_new$fit["srmr"], digits = 3))`). The Chi-square goodness of fit test still has a p-value of `r unname(round(sum_fit1corr_new$fit["pvalue"], digits = 3))`. We will use this model 
+Since, however, the performance measures (second column in Table \@ref(tab:CFA1performancecorrBI)) shows less-than-perfect fit, we look at the residual correlations in the model with correlated error terms for all pairs of
+attitude items that focus on the same aspect and notice that `r n` (`r round(n/(9*8/2)*100,2)`%) of all correlations are larger than 0.05 or smaller than -0.05 (this was 27.7% in the simple model). Three of the largest residual correlations involved the correlations between A_organic3, A_packaging3, and A_crueltyfree3 which leads us to believe that the assumption that these correlations are equal does not hold. Indeed, a model that relaxes this assumption has a good TLI (`r unname(round(sum_fit1corr_new$fit["tli"], digits = 3))`), CFI (`r unname(round(sum_fit1corr_new$fit["cfi"], digits = 3))`), RMSEA (`r unname(round(sum_fit1corr_new$fit["rmsea"], digits = 3))`), and SRMR (`r unname(round(sum_fit1corr_new$fit["srmr"], digits = 3))`). The Chi-square goodness of fit test still has a p-value of `r unname(round(sum_fit1corr_new$fit["pvalue"], digits = 3))`. 
 
-\clearpage 
 
 ## CFA to construct a measurement model for the Behavior-Intention items
 There are `r sum(str_detect(colnames(cosmetics),"BI"))` behavior-intention items that are scored on a five-point Likert scale. 
@@ -302,10 +302,6 @@ data.frame(
                 "baseline model Chisq. (df)",
                 "comparative fit index (CFI)",
                 "Tucker-Lewis index (TLI)",
-                "Loglik user model (H0)",
-                "Loglik unrestricted model(H1)",
-                "Akaike (AIC)",
-                "Bayesian (BIC)",
                 "RMSEA (ll,ul)",
                 "Standardized root mean square residual"),
   model3 = c(sprintf("%.2f (%.0f)%s", sum_fit1$fit["chisq"],
@@ -315,10 +311,6 @@ data.frame(
                     stars.pval(sum_fit1$fit["baseline.pvalue"])),
             round(sum_fit1$fit["cfi"], digits = 3),
             round(sum_fit1$fit["tli"], digits = 3),
-            round(sum_fit1$fit["logl"], digits = 3),
-            round(sum_fit1$fit["unrestricted.logl"], digits = 3),
-            round(sum_fit1$fit["aic"], digits = 3),
-            round(sum_fit1$fit["bic"], digits = 3),
             sprintf("%.2f (%.2f, %.2f)%s", sum_fit1$fit["rmsea"],
                     sum_fit1$fit["rmsea.ci.lower"], 
                     sum_fit1$fit["rmsea.ci.upper"], 
@@ -400,10 +392,6 @@ data.frame(
                 "baseline model Chisq. (df)",
                 "comparative fit index (CFI)",
                 "Tucker-Lewis index (TLI)",
-                "Loglik user model (H0)",
-                "Loglik unrestricted model(H1)",
-                "Akaike (AIC)",
-                "Bayesian (BIC)",
                 "RMSEA (ll,ul)",
                 "Standardized root mean square residual"),
   model4 = c(sprintf("%.2f (%.0f)%s", sum_fit1corr$fit["chisq"],
@@ -413,10 +401,6 @@ data.frame(
                     stars.pval(sum_fit1corr$fit["baseline.pvalue"])),
             round(sum_fit1corr$fit["cfi"], digits = 3),
             round(sum_fit1corr$fit["tli"], digits = 3),
-            round(sum_fit1corr$fit["logl"], digits = 3),
-            round(sum_fit1corr$fit["unrestricted.logl"], digits = 3),
-            round(sum_fit1corr$fit["aic"], digits = 3),
-            round(sum_fit1corr$fit["bic"], digits = 3),
             sprintf("%.2f (%.2f, %.2f)%s", sum_fit1corr$fit["rmsea"],
                     sum_fit1corr$fit["rmsea.ci.lower"], 
                     sum_fit1corr$fit["rmsea.ci.upper"], 
@@ -429,7 +413,8 @@ data.frame(
   kable(booktabs = T,
         col.names = c("parameter", "simple model", 
                       "with correlated error terms","simple model", 
-                      "with correlated error terms")) %>%
+                      "with correlated error terms"),
+        caption = "Performance measure for the different models") %>%
   add_header_above(c(" " = 1, "Attitudes" = 2, "Behavior-intention" = 2)) %>%
   column_spec(1, width = "3cm") %>%
   column_spec(2:5, width = "2.8cm") 
@@ -489,7 +474,7 @@ n<-sum(ifelse(abs(cor_table)>0.05,1,0))/2
 ```
 An anova test between the two models shows that the model with correlated error terms is significantly better ( p-value `r anovap`). 
 
-The performance measures (column 4 in Table \@ref(tab:CFA1performancecorrBI)) show a good fit and most residual correlations are between -0.05 and 0.05 (only `r n` have an absolute value that is slightly higher with a maximum of `r round(max(abs(cor_table)),3)`). We shall thus keep this model as the final model.
+The performance measures (column 4 in Table \@ref(tab:CFA1performancecorrBI)) shows a good fit and most residual correlations are between -0.05 and 0.05 (only `r n` have an absolute value that is slightly higher with a maximum of `r round(max(abs(cor_table)),3)`). We shall thus keep this model as the final model.
 
 ## Structural equation model to evaluate the impact of attitude on behavior intention
 
