@@ -13,6 +13,7 @@ output:
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+library(candisc)
 library(tidyverse)
 library(rprojroot)
 library(lavaan)
@@ -649,12 +650,76 @@ load(find_root_file("data/benefits.Rdata",
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 ```
 
-
-
 ## Canonical correlation analysis
+
+```{r cca, include=TRUE, message=FALSE, warning=FALSE}
+library(candisc)
+zbenefits <- benefits
+zbenefits[,2:14] <- scale(zbenefits[,2:14],scale=TRUE,center=TRUE) 
+
+cancor.out <- cancor(
+  cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
+~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
+SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
+SB_often_lessthanentitled+ SB_often_notentitled, 
+data=zbenefits) 
+
+#print summary results 
+summary(cancor.out)
+
+#compute redundancies 
+R2tu<-cancor.out$cancor^2 
+R2tu<-cancor.out$cancor^2 
+VAFYbyt<-apply(cancor.out$structure$Y.yscores^2,2,sum)/3 
+redund<-R2tu*VAFYbyt 
+round(cbind(R2tu,VAFYbyt,redund,total=cumsum(redund)),4) 
+
+#print canonical loadings 
+round(cancor.out$structure$X.xscores,2) 
+round(cancor.out$structure$Y.yscores,2)
+
+```
+
 
 
 ## Split-half approach
+
+```{r spa, include=TRUE, message=FALSE, warning=FALSE}
+train <- benefits[seq(2,3310,by=2),]
+valid <- benefits[seq(1,3310,by=2),]
+train[,2:14]<-scale(train[,2:14],center=TRUE,scale=TRUE)
+valid[,2:14]<-scale(valid[,2:14],center=TRUE,scale=TRUE)
+
+#conduct CCA on training data
+
+cancor.train<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
+~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
+SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
+SB_often_lessthanentitled+ SB_often_notentitled , data=train) 
+
+#conduct CCA on validation data
+
+cancor.valid<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
+~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
+SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
+SB_often_lessthanentitled+ SB_often_notentitled , data=valid) 
+
+# canonical variates calibration set
+train.X1<-cancor.train$score$X
+train.Y1<-cancor.train$score$Y
+
+# compute canonical variates using data of calibration set and coefficients estimated on validation set
+train.X2<-as.matrix(train[,6:14])%*%cancor.valid$coef$X
+train.Y2<-as.matrix(train[,2:5])%*%cancor.valid$coef$Y
+
+round(cor(train.Y1,train.Y2),3) 
+round(cor(train.X1,train.X2),3) 
+round(cor(train.X1,train.Y1),3) 
+round(cor(train.X2,train.Y2),3) 
+round(cor(train.Y2,train.Y2),3) 
+round(cor(train.X2,train.X2),3)
+
+```
 
 # Appendix
 ```{r CFA1graphical, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
