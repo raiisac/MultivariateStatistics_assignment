@@ -232,7 +232,7 @@ fit1acorr <- fit1corr
 ```
 
 
-### Conclusion
+### Conclusion {#conc1a}
 ```{r CFA1LRtest, echo=FALSE, message=FALSE, warning=FALSE}
 #Anova test
 test <- anova(fit1corr, fit1)
@@ -475,7 +475,7 @@ knitr::kable(
 
 
 
-### Conclusion
+### Conclusion {#conc1b}
 
 ```{r CFA1LRtestBI, echo=FALSE, message=FALSE, warning=FALSE}
 test <- anova(fit1corr, fit1)
@@ -496,7 +496,12 @@ The performance measures (column 3 and 4 in Table \@ref(tab:CFA1performancecorrB
 
 ## Structural equation model to evaluate the impact of attitude on behavior intention
 
-```{r SEM, echo=FALSE, message=FALSE, warning=FALSE}
+We first fit a structural equation model on the covariance matrix of all items.
+
+- A_organic, A_packaging, and A_crueltyfree are related to the attitude items  with a model with correlated error terms for pairs of items that focus on the same aspects. For statements that focus on “the right thing to do” or “pleasant”, there are equal correlations. As discussed in section \@ref(conc1a), we relax the constraint of equal residual correlations for items that focus on the fact that purchasing sustainable cosmetics is “a must”. 
+- BI_organic, BI_packaging, and BI_crueltyfree are related to the attitude items  with a model with correlated error terms for pairs of items that focus on the same aspects. As discussed in section \@ref(conc1b), a model that imposes the constraint of equal residual correlations for all pairs of items that focus on the same aspect has a good fit and will be used here.
+
+```{r SEM, echo=TRUE, message=FALSE, warning=FALSE}
 cormat <- cov(cosmetics_std)
 sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   BI_packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
@@ -569,8 +574,8 @@ The structural equation model shows that all correlations between latent variabl
 
 These population regression coefficients are quite similar so we next test a model that imposes that all three regression coefficients are the same.
 
-### The same population regression coefficient
-```{r SEM2_1, echo=FALSE, message=FALSE, warning=FALSE}
+### Equal population regression coefficients
+```{r SEM2_1, echo=TRUE, message=FALSE, warning=FALSE}
 sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   BI_packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
   BI_crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
