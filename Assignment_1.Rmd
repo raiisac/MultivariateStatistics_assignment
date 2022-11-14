@@ -38,9 +38,11 @@ There are `r sum(str_detect(colnames(cosmetics),"A_"))` attitude items that are 
 
 ### A simple 3-factor model
 
-We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated and the factor loading of the first indicator of each latent variable is fixed to 1. We fit the model on standardized data. The first columns in Table \@ref(tab:CFA1performancecorrBI) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. On the other hand, composite reliability measures the reliability of the factor scores. We can see that the composite reliability values are high (Table \@ref(tab:CFA1standardized)), therefore, the factors are measured in a reliable way. Figure \@ref(fig:CFA1graphical) in the appendix shows a graphical representation of the model, including all loadings (which are equal to the covariance between the variable and the factor since the data was first standardized), correlations and variances.
+We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated and the factor loading of the first indicator of each latent variable is fixed to 1. We fit the model on standardized data. The first columns in Table \@ref(tab:CFA1performancecorrBI) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. On the other hand, composite reliability measures the reliability of the factor scores. We can see that the composite reliability values are high (Table \@ref(tab:CFA1standardized)), therefore, the factors are measured in a reliable way. Figure \@ref(fig:CFA1graphical) in the appendix shows a graphical representation of the model, including all loadings, correlations and variances.
 
-In the standardized solution, the standardized loadings represent correlations between a variable and a factor (Table \@ref(tab:CFA1standardized)) and the error variances indicate the proportion of the variance in a variable that cannot be explained by the model (Table \@ref(tab:CFA1standardized)).
+In the standardized solution, the standardized loadings represent correlations between a variable and a factor (Table \@ref(tab:CFA1standardized)). All standardized loadings are above 0.7. Therefore, the squared loadings are higher than 0.5. This reflects a sufficient reliability of the indicator variables. Since all the standardized loadings are positive and significant, there is convergent validity.
+
+and the error variances indicate the proportion of the variance in a variable that cannot be explained by the model (Table \@ref(tab:CFA1standardized)).
 
 
 
@@ -89,21 +91,22 @@ data.frame(
 
 ```{r CFA1standardized, echo=FALSE, message=FALSE, warning=FALSE}
 t1 <- sum_fit1_std[1:9,] %>%
-  mutate(loading = sprintf("%s %s %s", lhs, op, rhs),
+  mutate(std_loading = sprintf("%s %s %s", lhs, op, rhs),
          stars = stars.pval(pvalue),
          value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
                          stars)) %>%
-  dplyr::select(loading, value)# %>%
+  dplyr::select(std_loading, value)# %>%
   # kable(col.names = c("Variables","Loading (LL, UL)"),
   #       align = "lc",
   #       #caption = "Standardised loadings.",
   #       booktabs = TRUE,
   #       format = "latex")
-t2 <- sum_fit1$pe[10:24,] %>%
-  mutate(`(co)variance` = sprintf("%s%s%s", lhs, op, rhs),
+t2 <- sum_fit1_std[10:24,] %>%
+  mutate(`std_error.variance` = sprintf("%s%s%s", lhs, op, rhs),
          stars = stars.pval(pvalue),
-         value = sprintf("%.2f %s", est, stars)) %>%
-  dplyr::select(`(co)variance`, value) #%>%
+         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+                         stars)) %>%
+  dplyr::select(`std_error.variance`, value) #%>%
   # kable(col.names = c("Variable","Error variance (LL, UL)"),
   #       align = "lc",
   #       #caption = "Error variances.",
@@ -275,10 +278,15 @@ attitude items that focus on the same aspect and notice that `r n` (`r round(n/(
 
 
 ## CFA to construct a measurement model for the Behavior-Intention items
+
 There are `r sum(str_detect(colnames(cosmetics),"BI"))` behavior-intention items that are scored on a five-point Likert scale. 
+As with the attitude items, we we fit a CFA on the covariance matrix of the centered dataset. 
 
 ### A simple 3-factor model
-```{r CFA1BI, include=FALSE, message=FALSE, warning=FALSE}
+
+Table \@ref(tab:CFA1performancecorrBI) shows, in the third column) that all performance metrics, except for SRMSR, indicate that this simple model does not fit the data well. Nevertheless, composite reliability (Table \@ref(tab:CFA1standardizedBI)) is high for all three latent variables.
+
+```{r CFA1BI, include=TRUE, message=FALSE, warning=FALSE}
 #We first standardize the variables
 covmat1 <- cov(cosmetics_std[,10:18])
 simplemodel1 <- 
@@ -316,36 +324,42 @@ data.frame(
                     sum_fit1$fit["rmsea.ci.upper"], 
                     stars.pval(sum_fit1$fit["rmsea.pvalue"])),
             round(sum_fit1$fit["srmr"], digits = 3))
-) ->mod3performance
+) -> mod3performance
 
 ```
 
 ```{r CFA1standardizedBI, echo=FALSE, message=FALSE, warning=FALSE}
 t1 <- sum_fit1_std[1:9,] %>%
-  mutate(loading = sprintf("%s %s %s", lhs, op, rhs),
+  mutate(std_loading = sprintf("%s %s %s", lhs, op, rhs),
          stars = stars.pval(pvalue),
          value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
                          stars)) %>%
-  dplyr::select(loading, value)# %>%
+  dplyr::select(std_loading, value)# %>%
   # kable(col.names = c("Variables","Loading (LL, UL)"),
   #       align = "lc",
   #       #caption = "Standardised loadings.",
   #       booktabs = TRUE,
   #       format = "latex")
-t2 <- sum_fit1_std[16:24,] %>%
-  mutate(error.variance = lhs,
+t2 <- sum_fit1_std[10:24,] %>%
+  mutate(std_error.variance = sprintf("%s%s%s", lhs, op, rhs),
          stars = stars.pval(pvalue),
          value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
                        stars)) %>%
-  dplyr::select(error.variance, value) #%>%
+  dplyr::select(std_error.variance, value) #%>%
   # kable(col.names = c("Variable","Error variance (LL, UL)"),
   #       align = "lc",
   #       #caption = "Error variances.",
   #       booktabs = TRUE,
   #       row.names = FALSE,
   #       format = "latex")
+factor <- c("organic","packaging","crueltyfree")
+reliability <- round(c(compositerel(sum_fit1_std[1:3,4]),
+                     compositerel(sum_fit1_std[4:6,4]),
+                     compositerel(sum_fit1_std[7:9,4])),3)
+t3 <- data.frame(factor,reliability)
+
 knitr::kable(
-  list(t1, t2),
+  list(t1, t2, t3),
   caption = 'The standardized solution of the simple model for the behavior-intent items.',
   booktabs = TRUE, valign = 't'
 )
@@ -356,7 +370,7 @@ knitr::kable(
 
 Since the simple 3-factor model does not seem to perform well, we alter the model by including correlated error terms for all pairs of items that focus on the same aspect. We also impose equal residual residual correlations for all pairs of items that focus on the same aspect.
 
-```{r CFA1corrBI, include=FALSE, message=FALSE, warning=FALSE}
+```{r CFA1corrBI, include=TRUE, message=FALSE, warning=FALSE}
 corrmodel1 <- 
 'organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
@@ -422,7 +436,7 @@ data.frame(
 
 ```
 
-```{r CFA1standardizedcorrBI, echo=FALSE, message=FALSE, warning=FALSE}
+```{r CFA1standardizedcorrBI, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE}
 t1 <- sum_fit1_std_corr[1:9,] %>%
   mutate(loading = sprintf("%s %s %s", lhs, op, rhs),
          stars = stars.pval(pvalue),
@@ -469,12 +483,16 @@ anovap <-  ifelse(test$`Pr(>Chisq)`[2]<0.001,"$<0.001$",ifelse(test$`Pr(>Chisq)`
 cor_table <- residuals(fit1corr, type = "cor")$cov
 
 #compute number of residual correlations with absolute value larger than 0.05 below the diagonal
-n<-sum(ifelse(abs(cor_table)>0.05,1,0))/2
+n <- sum(ifelse(abs(cor_table)>0.05,1,0))/2
 
+cor_table_simple <- residuals(fit1corr, type = "cor")$cov
+
+#compute number of residual correlations with absolute value larger than 0.05 below the diagonal
+n_simple <- sum(ifelse(abs(cor_table)>0.05,1,0))/2
 ```
-An anova test between the two models shows that the model with correlated error terms is significantly better ( p-value `r anovap`). 
+An anova test between the two models shows that the model with correlated error terms for all pairs of Behavior-Intention items that focus on the same aspect is significantly better (p-value `r anovap`). 
 
-The performance measures (column 4 in Table \@ref(tab:CFA1performancecorrBI)) shows a good fit and most residual correlations are between -0.05 and 0.05 (only `r n` have an absolute value that is slightly higher with a maximum of `r round(max(abs(cor_table)),3)`). We shall thus keep this model as the final model.
+The performance measures (column 3 and 4 in Table \@ref(tab:CFA1performancecorrBI)) show a good fit and all residual correlations are between -0.05 and 0.05 (the simpler model had `r n_simple` (`r round(n/(9*8/2)*100,2)`%) residual correlations between -0.05 and 0.05). For the simple model We shall thus keep this model as the final model.
 
 ## Structural equation model to evaluate the impact of attitude on behavior intention
 
