@@ -36,7 +36,8 @@ colnames(cosmetics) <- str_replace(colnames(cosmetics),
 There are `r sum(str_detect(colnames(cosmetics),"A_"))` attitude items that are scored on a five-point Likert scale.
 
 ### A simple 3-factor model
-We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated. We fit the model on standardized data. Table \@ref(tab:CFA1performance) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. Figure \@ref(fig:CFA1graphical) shows a graphical representation of the model, including all loadings (which are equal to the covariance between the variable and the factor since the data was first standardized), correlations and variances.
+
+We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated and the factor loading of the first indicator of each latent variable is fixed to 1. We fit the model on standardized data. Table \@ref(tab:CFA1performance) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. Figure \@ref(fig:CFA1graphical) shows a graphical representation of the model, including all loadings (which are equal to the covariance between the variable and the factor since the data was first standardized), correlations and variances.
 
 In the standardized solution, the standardized loadings represent correlations between a variable and a factor (Table \@ref(tab:CFA1standardized)) and the error variances indicate the proportion of the variance in a variable that cannot be explained by the model (Table \@ref(tab:CFA1standardized)).
 
@@ -45,12 +46,12 @@ In the standardized solution, the standardized loadings represent correlations b
 cosmetics_std <- scale(cosmetics, center = TRUE, scale = TRUE)
 covmat1 <- cov(cosmetics_std[,1:9])
 simplemodel1 <- 
-'organic = ~NA*A_organic1 + A_organic2 + A_organic3
-  packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
-  crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
-  organic ~~ 1*organic
-  packaging ~~ 1*packaging
-  crueltyfree ~~ 1*crueltyfree
+'organic = ~1*A_organic1 + A_organic2 + A_organic3
+  packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
+  crueltyfree = ~1*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  organic ~~ organic
+  packaging ~~ packaging
+  crueltyfree ~~ crueltyfree
   organic ~~ packaging
   organic ~~ crueltyfree
   packaging ~~ crueltyfree'
@@ -108,12 +109,11 @@ t1 <- sum_fit1_std[1:9,] %>%
   #       #caption = "Standardised loadings.",
   #       booktabs = TRUE,
   #       format = "latex")
-t2 <- sum_fit1_std[16:24,] %>%
-  mutate(error.variance = lhs,
+t2 <- sum_fit1$pe[10:24,] %>%
+  mutate(`(co)variance` = sprintf("%s%s%s", lhs, op, rhs),
          stars = stars.pval(pvalue),
-         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
-                       stars)) %>%
-  dplyr::select(error.variance, value) #%>%
+         value = sprintf("%.2f %s", est, stars)) %>%
+  dplyr::select(`(co)variance`, value) #%>%
   # kable(col.names = c("Variable","Error variance (LL, UL)"),
   #       align = "lc",
   #       #caption = "Error variances.",
@@ -122,71 +122,38 @@ t2 <- sum_fit1_std[16:24,] %>%
   #       format = "latex")
 knitr::kable(
   list(t1, t2),
-  caption = 'The standardized solution of the simple model for the attitudes.',
+  caption = 'The solution of the simple model for the attitudes.',
   booktabs = TRUE, valign = 't'
 )
+fit1a <- fit1
 ```
 
-```{r CFA1graphical, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
-lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
-                  "A_organic1", "A_organic2", "A_organic3", 
-                  "A_packaging1", "A_packaging2", "A_packaging3", 
-                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3", 
-                  rows = 2)
-p <- graph_sem(model = fit1, layout = lay)
-if (!file.exists("figures/CFA1graphical.png")) {
-  ggsave("figures/CFA1graphical.png", p, 
-         device = "png", width = 11, height = 4)}
-knitr::include_graphics(find_root_file("figures/CFA1graphical.png", 
-    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
-```
 
 ### A 3-factor model with correlated error terms
 
-Since the simple 3-factor model does not seem to perform well, we alter the model by including correlated error terms for all pairs of items that focus on the same aspect. We also impose equal residual residual correlations for all pairs of items that focus on the same aspect.
+Since the simple 3-factor model does not seem to perform well, we alter the model by including correlated error terms for all pairs of items that focus on the same aspect. We also impose equal residual correlations for all pairs of items that focus on the same aspect.
 
 ```{r CFA1corr, include=FALSE, message=FALSE, warning=FALSE}
-# corrmodel1 <- 
-# 'organic = ~NA*A_organic1 + A_organic2 + A_organic3
-#   packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
-#   crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
-#   right = ~c*A_organic1 + c*A_packaging1 + c*A_crueltyfree1
-#   pleasant = ~d*A_organic2 + d*A_packaging2 + d*A_crueltyfree2
-#   must = ~e*A_organic3 + e*A_packaging3 + e*A_crueltyfree3
-#   organic ~~ 1*organic
-#   packaging ~~ 1*packaging
-#   crueltyfree ~~ 1*crueltyfree
-#   right ~~right
-#   pleasant ~~pleasant
-#   must ~~must
-#   organic ~~ packaging
-#   organic ~~ crueltyfree
-#   packaging ~~ crueltyfree
-#   organic ~~0*right
-#   packaging ~~0*right
-#   crueltyfree ~~0*right
-#   organic ~~0*pleasant
-#   packaging ~~0*pleasant
-#   crueltyfree ~~0*pleasant
-#   organic ~~0*must
-#   packaging ~~0*must
-#   crueltyfree ~~0*must'
 corrmodel1 <- 
-'organic = ~NA*A_organic1 + A_organic2 + A_organic3
-  packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
-  crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+'organic = ~1*A_organic1 + A_organic2 + A_organic3
+  packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
+  crueltyfree = ~1*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
   A_organic1 ~~c*A_packaging1 
   A_organic1 ~~c*A_crueltyfree1
-  A_packaging1 ~~c*A_crueltyfree2
+  A_packaging1 ~~c*A_crueltyfree1
+  
   A_organic2 ~~d*A_packaging2 
   A_organic2 ~~d*A_crueltyfree2
   A_packaging2 ~~d*A_crueltyfree2
+  
   A_organic3 ~~e*A_packaging3 
   A_organic3 ~~e*A_crueltyfree3
   A_packaging3 ~~e*A_crueltyfree3
-  organic ~~ 1*organic
-  packaging ~~ 1*packaging
-  crueltyfree ~~ 1*crueltyfree
+  
+  organic ~~ organic
+  packaging ~~ packaging
+  crueltyfree ~~ crueltyfree
+  
   organic ~~ packaging
   organic ~~ crueltyfree
   packaging ~~ crueltyfree
@@ -245,50 +212,71 @@ t1 <- sum_fit1_std_corr[1:9,] %>%
   #       #caption = "Standardised loadings.",
   #       booktabs = TRUE,
   #       format = "latex")
-t2 <- sum_fit1_std_corr[22:33,] %>%
-  mutate(error.variance = lhs,
+t2 <- sum_fit1corr$pe[10:33,] %>%
+  mutate(`(co)variance` = sprintf("%s%s%s", lhs, op, rhs),
          stars = stars.pval(pvalue),
-         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
-                       stars)) %>%
-  dplyr::select(error.variance, value) #%>%
+         value = sprintf("%.2f %s", est, stars)) %>%
+  dplyr::select(`(co)variance`, value) #%>% #%>%
   # kable(col.names = c("Variable","Error variance (LL, UL)"),
   #       align = "lc",
   #       #caption = "Error variances.",
   #       booktabs = TRUE,
   #       row.names = FALSE,
   #       format = "latex")
-t3 <- sum_fit1_std_corr[10:18,] %>%
-  mutate(resid.correlation = sprintf("%s %s %s", lhs, op, rhs),
-         stars = stars.pval(pvalue),
-         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
-                         stars)) %>%
-  dplyr::select(resid.correlation, value)
+# t3 <- sum_fit1_std_corr[10:21,] %>%
+#   mutate(resid.correlation = sprintf("%s %s %s", lhs, op, rhs),
+#          stars = stars.pval(pvalue),
+#          value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+#                          stars)) %>%
+#   dplyr::select(resid.correlation, value)
 knitr::kable(
-  list(t1, t2, t3),
+  list(t1, t2),
   caption = 'The standardized solution of the model with correlated error terms for the attitudes.',
   booktabs = TRUE, valign = 't'
 )
+fit1acorr <- fit1corr
 ```
 
-```{r CFA1graphicalcorr, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
-lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
-                  "A_organic1", "A_organic2", "A_organic3", 
-                  "A_packaging1", "A_packaging2", "A_packaging3", 
-                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3", 
-                  "",  "right","","","pleasant","","","must","",
-                  rows = 3)
-p <- graph_sem(model = fit1corr, layout = lay)
-if (!file.exists("figures/CFA1graphicalcorr.png")) {
-  ggsave("figures/CFA1graphicalcorr.png", p, 
-         device = "png", width = 11, height = 5)
-  }
-knitr::include_graphics(find_root_file("figures/CFA1graphicalcorr.png", 
-    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
-```
+
 ### Conclusion
-```{r CFA1LRtest, echo=TRUE, message=FALSE, warning=FALSE}
-anova(fit1corr, fit1)
+```{r CFA1LRtest, echo=FALSE, message=FALSE, warning=FALSE}
+test <- anova(fit1corr, fit1)
+anovap <-  ifelse(test$`Pr(>Chisq)`[2]<0.001,"$<0.001$",ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.01$", ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.05$","$>0.05$")))
+cor_table <- residuals(fit1corr, type = "cor")$cov
+
+#compute number of residual correlations with absolute value larger than 0.05 below the diagonal
+n<-sum(ifelse(abs(cor_table)>0.05,1,0))/2
+corrmodel1 <- 
+    'organic = ~1*A_organic1 + A_organic2 + A_organic3
+  packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
+  crueltyfree = ~1*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  A_organic1 ~~c*A_packaging1 
+  A_organic1 ~~c*A_crueltyfree1
+  A_packaging1 ~~c*A_crueltyfree1
+  
+  A_organic2 ~~d*A_packaging2 
+  A_organic2 ~~d*A_crueltyfree2
+  A_packaging2 ~~d*A_crueltyfree2
+  
+  A_organic3 ~~A_packaging3 
+  A_organic3 ~~A_crueltyfree3
+  A_packaging3 ~~A_crueltyfree3
+  
+  organic ~~ organic
+  packaging ~~ packaging
+  crueltyfree ~~ crueltyfree
+  
+  organic ~~ packaging
+  organic ~~ crueltyfree
+  packaging ~~ crueltyfree
+  '
+fit1corr_new <- cfa(corrmodel1, sample.cov = covmat1, sample.nobs = nrow(cosmetics))
+sum_fit1corr_new <- summary(fit1corr_new, fit.measure = T)
+sum_fit1_std_corr_new <- standardizedSolution(fit1corr_new)
 ```
+An anova test between the two models shows that the model with correlated error terms is significantly better ( p-value `r anovap`). 
+
+Since, however, the performance measures (Table \@ref(tab:CFA1performancecorr)) shows less-than-perfect fit, we look at the residual correlations and notice that `r n` (`r round(n/(9*8/2)*100,2)`%) of all correlations are larger than 0.05 or smaller than -0.05. Three of the largest residual correlations involved the correlations between A_organic3, A_packaging3, and A_crueltyfree3 which leads us to believe that the assumption that these correlations are equal does not hold. Indeed, a model that relaxes this assumption has a good TLI (`r unname(round(sum_fit1corr_new$fit["tli"], digits = 3))`), CFI (`r unname(round(sum_fit1corr_new$fit["cfi"], digits = 3))`), RMSEA (`r unname(round(sum_fit1corr_new$fit["rmsea"], digits = 3))`), and SRMR (`r unname(round(sum_fit1corr_new$fit["srmr"], digits = 3))`). The Chi-square goodness of fit test still has a p-value of `r unname(round(sum_fit1corr_new$fit["pvalue"], digits = 3))`
 
 
 ## CFA to construct a measurement model for the Behavior-Intention items
@@ -299,12 +287,12 @@ There are `r sum(str_detect(colnames(cosmetics),"BI"))` behavior-intention items
 #We first standardize the variables
 covmat1 <- cov(cosmetics_std[,10:18])
 simplemodel1 <- 
-'organic = ~NA*BI_organic1 + BI_organic2 + BI_organic3
-  packaging = ~NA*BI_packaging1 + BI_packaging2 + BI_packaging3
-  crueltyfree = ~NA*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
-  organic ~~ 1*organic
-  packaging ~~ 1*packaging
-  crueltyfree ~~ 1*crueltyfree
+'organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
+  packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
+  crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
+  organic ~~ organic
+  packaging ~~ packaging
+  crueltyfree ~~ crueltyfree
   organic ~~ packaging
   organic ~~ crueltyfree
   packaging ~~ crueltyfree'
@@ -382,46 +370,31 @@ knitr::kable(
 ```
 
 
-
-
-
-
-```{r CFA1graphicalBI, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the behavior-intent items.", out.width = "15cm", fig.align='center'}
-lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
-                  "BI_organic1", "BI_organic2", "BI_organic3", 
-                  "BI_packaging1", "BI_packaging2", "BI_packaging3", 
-                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3", 
-                  rows = 2)
-p <- graph_sem(model = fit1, layout = lay)
-if (!file.exists("figures/CFA1graphical_BI.png")) {
-  ggsave(find_root_file("figures/CFA1graphical_BI.png", 
-    criterion = has_file("MultivariateStatistics_assignment.Rproj")), p, 
-         device = "png", width = 11, height = 4)}
-knitr::include_graphics(find_root_file("figures/CFA1graphical_BI.png", 
-    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
-```
-
 ### A 3-factor model with correlated error terms
 
 Since the simple 3-factor model does not seem to perform well, we alter the model by including correlated error terms for all pairs of items that focus on the same aspect. We also impose equal residual residual correlations for all pairs of items that focus on the same aspect.
 
 ```{r CFA1corrBI, include=FALSE, message=FALSE, warning=FALSE}
 corrmodel1 <- 
-'organic = ~NA*BI_organic1 + BI_organic2 + BI_organic3
-  packaging = ~NA*BI_packaging1 + BI_packaging2 + BI_packaging3
-  crueltyfree = ~NA*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
+'organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
+  packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
+  crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
+  
   BI_organic1 ~~c*BI_packaging1 
   BI_organic1 ~~c*BI_crueltyfree1
-  BI_packaging1 ~~c*BI_crueltyfree2
+  BI_packaging1 ~~c*BI_crueltyfree1
+  
   BI_organic2 ~~d*BI_packaging2 
   BI_organic2 ~~d*BI_crueltyfree2
   BI_packaging2 ~~d*BI_crueltyfree2
+  
   BI_organic3 ~~e*BI_packaging3 
   BI_organic3 ~~e*BI_crueltyfree3
   BI_packaging3 ~~e*BI_crueltyfree3
-  organic ~~ 1*organic
-  packaging ~~ 1*packaging
-  crueltyfree ~~ 1*crueltyfree
+  
+  organic ~~ organic
+  packaging ~~ packaging
+  crueltyfree ~~ crueltyfree
   organic ~~ packaging
   organic ~~ crueltyfree
   packaging ~~ crueltyfree
@@ -505,21 +478,7 @@ knitr::kable(
 )
 ```
 
-```{r CFA1graphicalcorrBI, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the model with correlated error terms for the behavior-intent items.", out.width = "15cm", fig.align='center'}
-lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
-                  "BI_organic1", "BI_organic2", "BI_organic3", 
-                  "BI_packaging1", "BI_packaging2", "BI_packaging3", 
-                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3", 
-                  "",  "right","","","pleasant","","","must","",
-                  rows = 3)
-p <- graph_sem(model = fit1corr, layout = lay)
-if (!file.exists("figures/CFA1graphicalcorrBI.png")) {
-  ggsave("figures/CFA1graphicalcorrBI.png", p, 
-         device = "png", width = 11, height = 5)
-  }
-knitr::include_graphics(find_root_file("figures/CFA1graphicalcorrBI.png", 
-    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
-```
+
 
 ### Conclusion
 
@@ -577,3 +536,66 @@ load(find_root_file("data/benefits.Rdata",
 
 
 ## Split-half approach
+
+# Appendix
+```{r CFA1graphical, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "A_organic1", "A_organic2", "A_organic3", 
+                  "A_packaging1", "A_packaging2", "A_packaging3", 
+                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3", 
+                  rows = 2)
+p <- graph_sem(model = fit1a, layout = lay)
+if (!file.exists("figures/CFA1graphical.png")) {
+  ggsave("figures/CFA1graphical.png", p, 
+         device = "png", width = 11, height = 4)}
+knitr::include_graphics(find_root_file("figures/CFA1graphical.png", 
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+```{r CFA1graphicalcorr, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the model for the attitudeswith correlated error terms for all pairs of items that focus on the same aspect.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "A_organic1", "A_organic2", "A_organic3", 
+                  "A_packaging1", "A_packaging2", "A_packaging3", 
+                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3", 
+                  "",  "right","","","pleasant","","","must","",
+                  rows = 3)
+p <- graph_sem(model = fit1acorr, layout = lay)
+if (!file.exists("figures/CFA1graphicalcorr.png")) {
+  ggsave("figures/CFA1graphicalcorr.png", p, 
+         device = "png", width = 11, height = 5)
+  }
+knitr::include_graphics(find_root_file("figures/CFA1graphicalcorr.png", 
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+
+```{r CFA1graphicalBI, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the behavior-intent items.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "BI_organic1", "BI_organic2", "BI_organic3", 
+                  "BI_packaging1", "BI_packaging2", "BI_packaging3", 
+                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3", 
+                  rows = 2)
+p <- graph_sem(model = fit1, layout = lay)
+if (!file.exists("figures/CFA1graphical_BI.png")) {
+  ggsave(find_root_file("figures/CFA1graphical_BI.png", 
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")), p, 
+         device = "png", width = 11, height = 4)}
+knitr::include_graphics(find_root_file("figures/CFA1graphical_BI.png", 
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+```{r CFA1graphicalcorrBI, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the model with correlated error terms for the behavior-intent items that focus on the same aspect.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "BI_organic1", "BI_organic2", "BI_organic3", 
+                  "BI_packaging1", "BI_packaging2", "BI_packaging3", 
+                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3", 
+                  "",  "right","","","pleasant","","","must","",
+                  rows = 3)
+p <- graph_sem(model = fit1corr, layout = lay)
+if (!file.exists("figures/CFA1graphicalcorrBI.png")) {
+  ggsave("figures/CFA1graphicalcorrBI.png", p, 
+         device = "png", width = 11, height = 5)
+  }
+knitr::include_graphics(find_root_file("figures/CFA1graphicalcorrBI.png", 
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
