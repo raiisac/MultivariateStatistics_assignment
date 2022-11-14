@@ -1,6 +1,6 @@
 ---
 documentclass: article
-fontsize: 12pt
+fontsize: 10pt
 date: "`r Sys.Date()`"
 output: 
   bookdown::pdf_document2: 
@@ -34,7 +34,7 @@ colnames(cosmetics) <- str_replace(colnames(cosmetics),
 ```
 
 ## CFA to construct a measurement model for the Attitude items
-There are `r sum(str_detect(colnames(cosmetics),"A_"))` attitude items that are scored on a five-point Likert scale.
+There are `r sum(str_detect(colnames(cosmetics),"A_"))` attitude items that are scored on a five-point Likert scale. To conduct CFA on the attitude items using the covariance matrix, we first center the data. 
 
 ### A simple 3-factor model
 
@@ -42,9 +42,9 @@ We first conduct a simple confirmatory factor analysis, assuming each item only 
 
 In the standardized solution, the standardized loadings represent correlations between a variable and a factor (Table \@ref(tab:CFA1standardized)) and the error variances indicate the proportion of the variance in a variable that cannot be explained by the model (Table \@ref(tab:CFA1standardized)).
 
-```{r CFA1, include=FALSE, message=FALSE, warning=FALSE}
+```{r CFA1, include=TRUE, message=FALSE, warning=FALSE}
 #We first standardize the variables
-cosmetics_std <- scale(cosmetics, center = TRUE, scale = TRUE)
+cosmetics_std <- scale(cosmetics, center = TRUE, scale = FALSE)
 covmat1 <- cov(cosmetics_std[,1:9])
 simplemodel1 <- 
 'organic = ~1*A_organic1 + A_organic2 + A_organic3
@@ -562,8 +562,9 @@ sum_sem1_std <- standardizedSolution(fitsem1)
 With a test statistics of `r round(sum_sem1$test$standard$stat, 2)` with `r sum_sem1$test$standard$df` degrees of freedom, the chi-square p-value is `r sum_sem1$test$standard$pvalue` which means we cannot reject the null hypothesis that the model fits well. 
  
 ```{r SEM2, echo=FALSE, message=FALSE, warning=FALSE}
+#summary SEM results
 sum_sem1
-
+#standardized results
 sum_sem1_std
 ```
 The structural equation model shows that all correlations between latent variables are positive and highly significant. 
