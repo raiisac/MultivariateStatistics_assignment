@@ -1,6 +1,6 @@
 ---
 documentclass: article
-fontsize: 12pt
+fontsize: 10pt
 date: "`r Sys.Date()`"
 output: 
   bookdown::pdf_document2: 
@@ -13,6 +13,7 @@ output:
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+
 update.packages("rlang")
 library(xfun)
 library(tidyverse)
@@ -20,6 +21,8 @@ library(candisc)
 library(rprojroot)
 library(lavaan)
 library(tidySEM)#to graphically represent SEM
+library(kableExtra)
+library(gtools)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -34,49 +37,652 @@ colnames(cosmetics) <- str_replace(colnames(cosmetics),
 ```
 
 ## CFA to construct a measurement model for the Attitude items
-There are `r sum(str_detect(colnames(cosmetics),"Attitude"))` attitude items that are scored on a five-point Likert scale.
+There are `r sum(str_detect(colnames(cosmetics),"A_"))` attitude items that are scored on a five-point Likert scale. To conduct CFA on the attitude items using the covariance matrix, we first center the data. 
 
-We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated. Figure \@ref(fig:CFA1graphical) shows a graphical representation of the model, including all correlations and 
+### A simple 3-factor model
 
-```{r CFA1, include=FALSE, message=FALSE, warning=FALSE}
-#We first center the variables
-cosmetics_center <- scale(cosmetics, center = TRUE)
-covmat1 <- cov(cosmetics_center[,1:9])
+We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated and the factor loading of the first indicator of each latent variable is fixed to 1. We fit the model on standardized data. The first columns in Table \@ref(tab:CFA1performancecorrBI) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. On the other hand, composite reliability measures the reliability of the factor scores. We can see that the composite reliability values are high (Table \@ref(tab:CFA1standardized)), therefore, the factors are measured in a reliable way. Figure \@ref(fig:CFA1graphical) in the appendix shows a graphical representation of the model, including all loadings, correlations and variances.
+
+In the standardized solution, the standardized loadings represent correlations between a variable and a factor (Table \@ref(tab:CFA1standardized)). All standardized loadings are above 0.7. Therefore, the squared loadings are higher than 0.5. This reflects a sufficient reliability of the indicator variables. Since all the standardized loadings are positive and significant, there is convergent validity.
+
+and the error variances indicate the proportion of the variance in a variable that cannot be explained by the model (Table \@ref(tab:CFA1standardized)).
+
+
+
+```{r CFA1, include=TRUE, message=FALSE, warning=FALSE}
+#We first standardize the variables
+cosmetics_std <- scale(cosmetics, center = TRUE, scale = FALSE)
+covmat1 <- cov(cosmetics_std[,1:9])
 simplemodel1 <- 
-'organic = ~NA*A_organic1 + A_organic2 + A_organic3
-  packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
-  crueltyfree = ~A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
-  organic ~~ 1*organic
-  packaging ~~ 1*packaging
-  crueltyfree ~~ 1*crueltyfree
+'organic = ~1*A_organic1 + A_organic2 + A_organic3
+  packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
+  crueltyfree = ~1*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  organic ~~ organic
+  packaging ~~ packaging
+  crueltyfree ~~ crueltyfree
   organic ~~ packaging
   organic ~~ crueltyfree
   packaging ~~ crueltyfree'
 fit1 <- cfa(simplemodel1, sample.cov = covmat1, sample.nobs = nrow(cosmetics))
-summary(fit1, fit.measure = T)
+sum_fit1 <- summary(fit1, fit.measure = T)
+sum_fit1_std <- standardizedSolution(fit1)
+```
+
+```{r CFA1performance, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  parameter = c('user model Chisq. (df)',
+                "baseline model Chisq. (df)",
+                "comparative fit index (CFI)",
+                "Tucker-Lewis index (TLI)",
+                "RMSEA (ll,ul)",
+                "Standardized root mean square residual"),
+  model1 = c(sprintf("%.2f (%.0f)%s", sum_fit1$fit["chisq"],
+                    sum_fit1$fit["df"], stars.pval(sum_fit1$fit["pvalue"])),
+            sprintf("%.2f (%.0f) %s", sum_fit1$fit["baseline.chisq"],
+                    sum_fit1$fit["baseline.df"], 
+                    stars.pval(sum_fit1$fit["baseline.pvalue"])),
+            round(sum_fit1$fit["cfi"], digits = 3),
+            round(sum_fit1$fit["tli"], digits = 3),
+            sprintf("%.2f (%.2f, %.2f)%s", sum_fit1$fit["rmsea"],
+                    sum_fit1$fit["rmsea.ci.lower"], 
+                    sum_fit1$fit["rmsea.ci.upper"], 
+                    stars.pval(sum_fit1$fit["rmsea.pvalue"])),
+            round(sum_fit1$fit["srmr"], digits = 3))
+) -> mod1performance
+
+```
+
+```{r CFA1standardized, echo=FALSE, message=FALSE, warning=FALSE}
+t1 <- sum_fit1_std[1:9,] %>%
+  mutate(std_loading = sprintf("%s %s %s", lhs, op, rhs),
+         stars = stars.pval(pvalue),
+         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+                         stars)) %>%
+  dplyr::select(std_loading, value)# %>%
+  # kable(col.names = c("Variables","Loading (LL, UL)"),
+  #       align = "lc",
+  #       #caption = "Standardised loadings.",
+  #       booktabs = TRUE,
+  #       format = "latex")
+t2 <- sum_fit1_std[10:24,] %>%
+  mutate(`std_error.variance` = sprintf("%s%s%s", lhs, op, rhs),
+         stars = stars.pval(pvalue),
+         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+                         stars)) %>%
+  dplyr::select(`std_error.variance`, value) #%>%
+  # kable(col.names = c("Variable","Error variance (LL, UL)"),
+  #       align = "lc",
+  #       #caption = "Error variances.",
+  #       booktabs = TRUE,
+  #       row.names = FALSE,
+  #       format = "latex")
+#reliability factor scores
+compositerel<-function(x){
+  A <- (sum(x))^2
+  B <- sum(1-x^2)
+  return(A/(A+B))
+}
+
+#overview table composite reliability
+factor <- c("organic","packaging","crueltyfree")
+reliability <- round(c(compositerel(sum_fit1_std[1:3,4]),
+                     compositerel(sum_fit1_std[4:6,4]),
+                     compositerel(sum_fit1_std[7:9,4])),3)
+t3 <- data.frame(factor,reliability)
+
+knitr::kable(
+  list(t1, t2, t3),
+  caption = 'The solution of the simple model for the attitudes.',
+  booktabs = TRUE, valign = 't'
+)
+fit1a <- fit1
 ```
 
 
-```{r CFA1graphical, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
-lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
-                  "A_organic1", "A_organic2", "A_organic3", 
-                  "A_packaging1", "A_packaging2", "A_packaging3", 
-                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3", 
-                  rows = 2)
-p <- graph_sem(model = fit1, layout = lay)
-if (!file.exists("figures/CFA1graphical.png")) {
-  ggsave("figures/CFA1graphical.png", p, 
-         device = "png", width = 11, height = 4)}
-knitr::include_graphics(find_root_file("figures/CFA1graphical.png", 
-    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+### A 3-factor model with correlated error terms
+
+Since the simple 3-factor model does not seem to perform well, we alter the model by including correlated error terms for all pairs of items that focus on the same aspect. We also impose equal residual correlations for all pairs of items that focus on the same aspect.
+
+```{r CFA1corr, include=TRUE, message=FALSE, warning=FALSE}
+corrmodel1 <- 
+'organic = ~1*A_organic1 + A_organic2 + A_organic3
+  packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
+  crueltyfree = ~1*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  A_organic1 ~~c*A_packaging1 
+  A_organic1 ~~c*A_crueltyfree1
+  A_packaging1 ~~c*A_crueltyfree1
+  
+  A_organic2 ~~d*A_packaging2 
+  A_organic2 ~~d*A_crueltyfree2
+  A_packaging2 ~~d*A_crueltyfree2
+  
+  A_organic3 ~~e*A_packaging3 
+  A_organic3 ~~e*A_crueltyfree3
+  A_packaging3 ~~e*A_crueltyfree3
+  
+  organic ~~ organic
+  packaging ~~ packaging
+  crueltyfree ~~ crueltyfree
+  
+  organic ~~ packaging
+  organic ~~ crueltyfree
+  packaging ~~ crueltyfree
+  '
+fit1corr <- cfa(corrmodel1, sample.cov = covmat1, sample.nobs = nrow(cosmetics))
+sum_fit1corr <- summary(fit1corr, fit.measure = T)
+sum_fit1_std_corr <- standardizedSolution(fit1corr)
 ```
+
+```{r CFA1performancecorr, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE}
+data.frame(
+  parameter = c('user model Chisq. (df)',
+                "baseline model Chisq. (df)",
+                "comparative fit index (CFI)",
+                "Tucker-Lewis index (TLI)",
+                "RMSEA (ll,ul)",
+                "Standardized root mean square residual"),
+  model2 = c(sprintf("%.2f (%.0f)%s", sum_fit1corr$fit["chisq"],
+                    sum_fit1corr$fit["df"], stars.pval(sum_fit1corr$fit["pvalue"])),
+            sprintf("%.2f (%.0f) %s", sum_fit1$fit["baseline.chisq"],
+                    sum_fit1corr$fit["baseline.df"], 
+                    stars.pval(sum_fit1corr$fit["baseline.pvalue"])),
+            round(sum_fit1corr$fit["cfi"], digits = 3),
+            round(sum_fit1corr$fit["tli"], digits = 3),
+            sprintf("%.2f (%.2f, %.2f)%s", sum_fit1corr$fit["rmsea"],
+                    sum_fit1corr$fit["rmsea.ci.lower"], 
+                    sum_fit1corr$fit["rmsea.ci.upper"], 
+                    stars.pval(sum_fit1corr$fit["rmsea.pvalue"])),
+            round(sum_fit1corr$fit["srmr"], digits = 3))
+) -> mod2performance
+
+```
+
+```{r CFA1standardizedcorr, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE}
+t1 <- sum_fit1_std_corr[1:9,] %>%
+  mutate(loading = sprintf("%s %s %s", lhs, op, rhs),
+         stars = stars.pval(pvalue),
+         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+                         stars)) %>%
+  dplyr::select(loading, value)# %>%
+  # kable(col.names = c("Variables","Loading (LL, UL)"),
+  #       align = "lc",
+  #       #caption = "Standardised loadings.",
+  #       booktabs = TRUE,
+  #       format = "latex")
+t2 <- sum_fit1corr$pe[10:33,] %>%
+  mutate(`(co)variance` = sprintf("%s%s%s", lhs, op, rhs),
+         stars = stars.pval(pvalue),
+         value = sprintf("%.2f %s", est, stars)) %>%
+  dplyr::select(`(co)variance`, value) #%>% #%>%
+  # kable(col.names = c("Variable","Error variance (LL, UL)"),
+  #       align = "lc",
+  #       #caption = "Error variances.",
+  #       booktabs = TRUE,
+  #       row.names = FALSE,
+  #       format = "latex")
+# t3 <- sum_fit1_std_corr[10:21,] %>%
+#   mutate(resid.correlation = sprintf("%s %s %s", lhs, op, rhs),
+#          stars = stars.pval(pvalue),
+#          value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+#                          stars)) %>%
+#   dplyr::select(resid.correlation, value)
+knitr::kable(
+  list(t1, t2),
+  caption = 'The standardized solution of the model with correlated error terms for the attitudes.',
+  booktabs = TRUE, valign = 't'
+)
+fit1acorr <- fit1corr
+```
+
+
+### Conclusion {#conc1a}
+```{r CFA1LRtest, echo=FALSE, message=FALSE, warning=FALSE}
+#Anova test
+test <- anova(fit1corr, fit1)
+anovap <-  ifelse(test$`Pr(>Chisq)`[2]<0.001,"$<0.001$",ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.01$", ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.05$","$>0.05$")))
+# Residual correlations
+cor_table <- residuals(fit1corr, type = "cor")$cov
+
+#compute number of residual correlations with absolute value larger than 0.05 below the diagonal
+n<-sum(ifelse(abs(cor_table)>0.05,1,0))/2
+
+corrmodel1 <- 
+    'organic = ~1*A_organic1 + A_organic2 + A_organic3
+  packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
+  crueltyfree = ~1*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  A_organic1 ~~c*A_packaging1 
+  A_organic1 ~~c*A_crueltyfree1
+  A_packaging1 ~~c*A_crueltyfree1
+  
+  A_organic2 ~~d*A_packaging2 
+  A_organic2 ~~d*A_crueltyfree2
+  A_packaging2 ~~d*A_crueltyfree2
+  
+  A_organic3 ~~A_packaging3 
+  A_organic3 ~~A_crueltyfree3
+  A_packaging3 ~~A_crueltyfree3
+  
+  organic ~~ organic
+  packaging ~~ packaging
+  crueltyfree ~~ crueltyfree
+  
+  organic ~~ packaging
+  organic ~~ crueltyfree
+  packaging ~~ crueltyfree
+  '
+fit1corr_new <- cfa(corrmodel1, sample.cov = covmat1, sample.nobs = nrow(cosmetics))
+sum_fit1corr_new <- summary(fit1corr_new, fit.measure = T)
+sum_fit1_std_corr_new <- standardizedSolution(fit1corr_new)
+```
+An anova test between the two models shows that the model with correlated error terms is significantly better ( p-value `r anovap`). 
+
+Since, however, the performance measures (second column in Table \@ref(tab:CFA1performancecorrBI)) shows less-than-perfect fit, we look at the residual correlations in the model with correlated error terms for all pairs of
+attitude items that focus on the same aspect and notice that `r n` (`r round(n/(9*8/2)*100,2)`%) of all correlations are larger than 0.05 or smaller than -0.05 (this was 27.7% in the simple model). Three of the largest residual correlations involved the correlations between A_organic3, A_packaging3, and A_crueltyfree3 which leads us to believe that the assumption that these correlations are equal does not hold. Indeed, a model that relaxes this assumption has a good TLI (`r unname(round(sum_fit1corr_new$fit["tli"], digits = 3))`), CFI (`r unname(round(sum_fit1corr_new$fit["cfi"], digits = 3))`), RMSEA (`r unname(round(sum_fit1corr_new$fit["rmsea"], digits = 3))`), and SRMR (`r unname(round(sum_fit1corr_new$fit["srmr"], digits = 3))`). The Chi-square goodness of fit test still has a p-value of `r unname(round(sum_fit1corr_new$fit["pvalue"], digits = 3))`. 
+
 
 ## CFA to construct a measurement model for the Behavior-Intention items
+
 There are `r sum(str_detect(colnames(cosmetics),"BI"))` behavior-intention items that are scored on a five-point Likert scale. 
+As with the attitude items, we we fit a CFA on the covariance matrix of the centered dataset. 
+
+### A simple 3-factor model
+
+Table \@ref(tab:CFA1performancecorrBI) shows, in the third column) that all performance metrics, except for SRMSR, indicate that this simple model does not fit the data well. Nevertheless, composite reliability (Table \@ref(tab:CFA1standardizedBI)) is high for all three latent variables.
+
+```{r CFA1BI, include=TRUE, message=FALSE, warning=FALSE}
+#We first standardize the variables
+covmat1 <- cov(cosmetics_std[,10:18])
+simplemodel1 <- 
+'organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
+  packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
+  crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
+  organic ~~ organic
+  packaging ~~ packaging
+  crueltyfree ~~ crueltyfree
+  organic ~~ packaging
+  organic ~~ crueltyfree
+  packaging ~~ crueltyfree'
+fit1 <- cfa(simplemodel1, sample.cov = covmat1, sample.nobs = nrow(cosmetics))
+sum_fit1 <- summary(fit1, fit.measure = T)
+sum_fit1_std <- standardizedSolution(fit1)
+```
+
+```{r CFA1performanceBI, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  parameter = c('user model Chisq. (df)',
+                "baseline model Chisq. (df)",
+                "comparative fit index (CFI)",
+                "Tucker-Lewis index (TLI)",
+                "RMSEA (ll,ul)",
+                "Standardized root mean square residual"),
+  model3 = c(sprintf("%.2f (%.0f)%s", sum_fit1$fit["chisq"],
+                    sum_fit1$fit["df"], stars.pval(sum_fit1$fit["pvalue"])),
+            sprintf("%.2f (%.0f) %s", sum_fit1$fit["baseline.chisq"],
+                    sum_fit1$fit["baseline.df"], 
+                    stars.pval(sum_fit1$fit["baseline.pvalue"])),
+            round(sum_fit1$fit["cfi"], digits = 3),
+            round(sum_fit1$fit["tli"], digits = 3),
+            sprintf("%.2f (%.2f, %.2f)%s", sum_fit1$fit["rmsea"],
+                    sum_fit1$fit["rmsea.ci.lower"], 
+                    sum_fit1$fit["rmsea.ci.upper"], 
+                    stars.pval(sum_fit1$fit["rmsea.pvalue"])),
+            round(sum_fit1$fit["srmr"], digits = 3))
+) -> mod3performance
+
+```
+
+```{r CFA1standardizedBI, echo=FALSE, message=FALSE, warning=FALSE}
+t1 <- sum_fit1_std[1:9,] %>%
+  mutate(std_loading = sprintf("%s %s %s", lhs, op, rhs),
+         stars = stars.pval(pvalue),
+         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+                         stars)) %>%
+  dplyr::select(std_loading, value)# %>%
+  # kable(col.names = c("Variables","Loading (LL, UL)"),
+  #       align = "lc",
+  #       #caption = "Standardised loadings.",
+  #       booktabs = TRUE,
+  #       format = "latex")
+t2 <- sum_fit1_std[10:24,] %>%
+  mutate(std_error.variance = sprintf("%s%s%s", lhs, op, rhs),
+         stars = stars.pval(pvalue),
+         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+                       stars)) %>%
+  dplyr::select(std_error.variance, value) #%>%
+  # kable(col.names = c("Variable","Error variance (LL, UL)"),
+  #       align = "lc",
+  #       #caption = "Error variances.",
+  #       booktabs = TRUE,
+  #       row.names = FALSE,
+  #       format = "latex")
+factor <- c("organic","packaging","crueltyfree")
+reliability <- round(c(compositerel(sum_fit1_std[1:3,4]),
+                     compositerel(sum_fit1_std[4:6,4]),
+                     compositerel(sum_fit1_std[7:9,4])),3)
+t3 <- data.frame(factor,reliability)
+
+knitr::kable(
+  list(t1, t2, t3),
+  caption = 'The standardized solution of the simple model for the behavior-intent items.',
+  booktabs = TRUE, valign = 't'
+)
+```
+
+
+### A 3-factor model with correlated error terms
+
+Since the simple 3-factor model does not seem to perform well, we alter the model by including correlated error terms for all pairs of items that focus on the same aspect. We also impose equal residual residual correlations for all pairs of items that focus on the same aspect.
+
+```{r CFA1corrBI, include=TRUE, message=FALSE, warning=FALSE}
+corrmodel1 <- 
+'organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
+  packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
+  crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
+  
+  BI_organic1 ~~c*BI_packaging1 
+  BI_organic1 ~~c*BI_crueltyfree1
+  BI_packaging1 ~~c*BI_crueltyfree1
+  
+  BI_organic2 ~~d*BI_packaging2 
+  BI_organic2 ~~d*BI_crueltyfree2
+  BI_packaging2 ~~d*BI_crueltyfree2
+  
+  BI_organic3 ~~e*BI_packaging3 
+  BI_organic3 ~~e*BI_crueltyfree3
+  BI_packaging3 ~~e*BI_crueltyfree3
+  
+  organic ~~ organic
+  packaging ~~ packaging
+  crueltyfree ~~ crueltyfree
+  organic ~~ packaging
+  organic ~~ crueltyfree
+  packaging ~~ crueltyfree
+  '
+fit1corr <- cfa(corrmodel1, sample.cov = covmat1, sample.nobs = nrow(cosmetics))
+sum_fit1corr <- summary(fit1corr, fit.measure = T)
+sum_fit1_std_corr <- standardizedSolution(fit1corr)
+```
+
+```{r CFA1performancecorrBI, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  parameter = c('user model Chisq. (df)',
+                "baseline model Chisq. (df)",
+                "comparative fit index (CFI)",
+                "Tucker-Lewis index (TLI)",
+                "RMSEA (ll,ul)",
+                "Standardized root mean square residual"),
+  model4 = c(sprintf("%.2f (%.0f)%s", sum_fit1corr$fit["chisq"],
+                    sum_fit1corr$fit["df"], stars.pval(sum_fit1corr$fit["pvalue"])),
+            sprintf("%.2f (%.0f) %s", sum_fit1$fit["baseline.chisq"],
+                    sum_fit1corr$fit["baseline.df"], 
+                    stars.pval(sum_fit1corr$fit["baseline.pvalue"])),
+            round(sum_fit1corr$fit["cfi"], digits = 3),
+            round(sum_fit1corr$fit["tli"], digits = 3),
+            sprintf("%.2f (%.2f, %.2f)%s", sum_fit1corr$fit["rmsea"],
+                    sum_fit1corr$fit["rmsea.ci.lower"], 
+                    sum_fit1corr$fit["rmsea.ci.upper"], 
+                    stars.pval(sum_fit1corr$fit["rmsea.pvalue"])),
+            round(sum_fit1corr$fit["srmr"], digits = 3))) %>%
+  left_join(mod1performance) %>%
+  left_join(mod2performance) %>%
+  left_join(mod3performance) %>%
+  dplyr::select(parameter, model1, model2, model3, model4) %>%
+  kable(booktabs = T,
+        col.names = c("parameter", "simple model", 
+                      "with correlated error terms","simple model", 
+                      "with correlated error terms"),
+        caption = "Performance measure for the different models") %>%
+  add_header_above(c(" " = 1, "Attitudes" = 2, "Behavior-intention" = 2)) %>%
+  column_spec(1, width = "3cm") %>%
+  column_spec(2:5, width = "2.8cm") 
+  
+
+```
+
+```{r CFA1standardizedcorrBI, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE}
+t1 <- sum_fit1_std_corr[1:9,] %>%
+  mutate(loading = sprintf("%s %s %s", lhs, op, rhs),
+         stars = stars.pval(pvalue),
+         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+                         stars)) %>%
+  dplyr::select(loading, value)# %>%
+  # kable(col.names = c("Variables","Loading (LL, UL)"),
+  #       align = "lc",
+  #       #caption = "Standardised loadings.",
+  #       booktabs = TRUE,
+  #       format = "latex")
+t2 <- sum_fit1_std_corr[22:33,] %>%
+  mutate(error.variance = lhs,
+         stars = stars.pval(pvalue),
+         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+                       stars)) %>%
+  dplyr::select(error.variance, value) #%>%
+  # kable(col.names = c("Variable","Error variance (LL, UL)"),
+  #       align = "lc",
+  #       #caption = "Error variances.",
+  #       booktabs = TRUE,
+  #       row.names = FALSE,
+  #       format = "latex")
+t3 <- sum_fit1_std_corr[10:18,] %>%
+  mutate(resid.correlation = sprintf("%s %s %s", lhs, op, rhs),
+         stars = stars.pval(pvalue),
+         value = sprintf("%.2f (%.2f, %.2f)%s", est.std, ci.lower, ci.upper, 
+                         stars)) %>%
+  dplyr::select(resid.correlation, value)
+knitr::kable(
+  list(t1, t2, t3),
+  caption = 'The standardized solution of the model with correlated error terms for the behavior-intent items.',
+  booktabs = TRUE, valign = 't'
+)
+```
+
+
+
+### Conclusion {#conc1b}
+
+```{r CFA1LRtestBI, echo=FALSE, message=FALSE, warning=FALSE}
+test <- anova(fit1corr, fit1)
+anovap <-  ifelse(test$`Pr(>Chisq)`[2]<0.001,"$<0.001$",ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.01$", ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.05$","$>0.05$")))
+cor_table <- residuals(fit1corr, type = "cor")$cov
+
+#compute number of residual correlations with absolute value larger than 0.05 below the diagonal
+n <- sum(ifelse(abs(cor_table)>0.05,1,0))/2
+
+cor_table_simple <- residuals(fit1corr, type = "cor")$cov
+
+#compute number of residual correlations with absolute value larger than 0.05 below the diagonal
+n_simple <- sum(ifelse(abs(cor_table)>0.05,1,0))/2
+```
+An anova test between the two models shows that the model with correlated error terms for all pairs of Behavior-Intention items that focus on the same aspect is significantly better (p-value `r anovap`). 
+
+The performance measures (column 3 and 4 in Table \@ref(tab:CFA1performancecorrBI)) show a good fit and all residual correlations are between -0.05 and 0.05 (the simpler model had `r n_simple` (`r round(n/(9*8/2)*100,2)`%) residual correlations between -0.05 and 0.05). For the simple model We shall thus keep this model as the final model.
 
 ## Structural equation model to evaluate the impact of attitude on behavior intention
 
+We first fit a structural equation model on the covariance matrix of all items.
+
+- A_organic, A_packaging, and A_crueltyfree are related to the attitude items  with a model with correlated error terms for pairs of items that focus on the same aspects. For statements that focus on “the right thing to do” or “pleasant”, there are equal correlations. As discussed in section \@ref(conc1a), we relax the constraint of equal residual correlations for items that focus on the fact that purchasing sustainable cosmetics is “a must”. 
+- BI_organic, BI_packaging, and BI_crueltyfree are related to the attitude items  with a model with correlated error terms for pairs of items that focus on the same aspects. As discussed in section \@ref(conc1b), a model that imposes the constraint of equal residual correlations for all pairs of items that focus on the same aspect has a good fit and will be used here.
+
+Structural relations are added to assess the effect of (1) Att_organic on BI_organic, (2) Att_packaging on BI_packaging and (3)
+Att_crueltyfree on BI_crueltyfree.
+
+```{r SEM, echo=TRUE, message=FALSE, warning=FALSE}
+cormat <- cov(cosmetics_std)
+sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
+  BI_packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
+  BI_crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
+  BI_organic1 ~~c*BI_packaging1 
+  BI_organic1 ~~c*BI_crueltyfree1
+  BI_packaging1 ~~c*BI_crueltyfree1
+  BI_organic2 ~~d*BI_packaging2 
+  BI_organic2 ~~d*BI_crueltyfree2
+  BI_packaging2 ~~d*BI_crueltyfree2
+  BI_organic3 ~~e*BI_packaging3 
+  BI_organic3 ~~e*BI_crueltyfree3
+  BI_packaging3 ~~e*BI_crueltyfree3
+  BI_organic ~~ BI_organic
+  BI_packaging ~~ BI_packaging
+  BI_crueltyfree ~~ BI_crueltyfree
+  BI_organic ~~ BI_packaging
+  BI_organic ~~ BI_crueltyfree
+  BI_packaging ~~ BI_crueltyfree
+  
+  A_organic = ~NA*A_organic1 + A_organic2 + A_organic3
+  A_packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
+  A_crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  A_organic1 ~~a*A_packaging1 
+  A_organic1 ~~a*A_crueltyfree1
+  A_packaging1 ~~a*A_crueltyfree1
+  A_organic2 ~~b*A_packaging2 
+  A_organic2 ~~b*A_crueltyfree2
+  A_packaging2 ~~b*A_crueltyfree2
+  A_organic3 ~~A_packaging3 
+  A_organic3 ~~A_crueltyfree3
+  A_packaging3 ~~A_crueltyfree3
+  A_organic ~~ 1*A_organic
+  A_packaging ~~ 1*A_packaging
+  A_crueltyfree ~~ 1*A_crueltyfree
+  A_organic ~~ A_packaging
+  A_organic ~~ A_crueltyfree
+  A_packaging ~~ A_crueltyfree
+  
+  #structural model
+  BI_organic ~A_organic
+  BI_packaging ~A_packaging
+  BI_crueltyfree ~A_crueltyfree
+  '
+fitsem1 <- sem(sem1, sample.cov = cormat, sample.nobs = nrow(cosmetics))
+sum_sem1 <- summary(fitsem1)
+sum_sem1_std <- standardizedSolution(fitsem1)
+```
+With a test statistics of `r round(sum_sem1$test$standard$stat, 2)` with `r sum_sem1$test$standard$df` degrees of freedom, the chi-square p-value is `r round(sum_sem1$test$standard$pvalue,3)` which means we can reject the null hypothesis that the model fits well. 
+ 
+```{r SEM2, echo=FALSE, message=FALSE, warning=FALSE}
+#summary SEM results
+sum_sem1$pe[49:51,] %>% 
+  mutate (Regression_coefficient = sprintf("%s%s\n%s",lhs, op, rhs),
+          stars = stars.pval(pvalue),
+         sem1 = sprintf("%.2f %s", est, 
+                         stars)) %>%
+  dplyr::select(Regression_coefficient, sem1) -> sem1regression
+#standardized results
+sum_sem1_std[49:51,] %>% 
+  mutate (Regression_coefficient = sprintf("%s%s\n%s",lhs, op, rhs),
+          stars = stars.pval(pvalue),
+         sem1_std = sprintf("%.2f %s", est.std, 
+                         stars))%>%
+  dplyr::select(Regression_coefficient, sem1_std) -> sem1regression_std
+```
+The structural equation model shows that all correlations between latent variables are positive and highly significant. The unstandardized and standardized regression coefficients are shown in respectively the first and second column of Table \@ref(tab:SEMregression).
+
+- an increase of one unit in attitude_organic increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_packaging increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_packaging", rhs == "A_packaging") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_crueltyfree increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_crueltyfree", rhs == "A_crueltyfree") %>% pull(est.std),3)`.
+
+These population regression coefficients are quite similar so we next test a model that imposes that all three regression coefficients are the same.
+
+### Equal population regression coefficients
+To fit a model with equal population regression coefficients, we replace the *structural model* part in the previous SEM description with the expression below and re-fit the model.
+
+```{r echo=T, results='hide'}
+'  #structural model
+  BI_organic ~p*A_organic
+  BI_packaging ~p*A_packaging
+  BI_crueltyfree ~p*A_crueltyfree'
+```
+
+
+```{r SEM2_1, echo=FALSE, message=FALSE, warning=FALSE}
+sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
+  BI_packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
+  BI_crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
+  
+  BI_organic1 ~~c*BI_packaging1 
+  BI_organic1 ~~c*BI_crueltyfree1
+  BI_packaging1 ~~c*BI_crueltyfree1
+  BI_organic2 ~~d*BI_packaging2 
+  BI_organic2 ~~d*BI_crueltyfree2
+  BI_packaging2 ~~d*BI_crueltyfree2
+  BI_organic3 ~~e*BI_packaging3 
+  BI_organic3 ~~e*BI_crueltyfree3
+  BI_packaging3 ~~e*BI_crueltyfree3
+  BI_organic ~~ BI_organic
+  BI_packaging ~~ BI_packaging
+  BI_crueltyfree ~~ BI_crueltyfree
+  BI_organic ~~ BI_packaging
+  BI_organic ~~ BI_crueltyfree
+  BI_packaging ~~ BI_crueltyfree
+  
+  A_organic = ~NA*A_organic1 + A_organic2 + A_organic3
+  A_packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
+  A_crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  
+  A_organic1 ~~a*A_packaging1 
+  A_organic1 ~~a*A_crueltyfree1
+  A_packaging1 ~~a*A_crueltyfree1
+  A_organic2 ~~b*A_packaging2 
+  A_organic2 ~~b*A_crueltyfree2
+  A_packaging2 ~~b*A_crueltyfree2
+  A_organic3 ~~A_packaging3 
+  A_organic3 ~~A_crueltyfree3
+  A_packaging3 ~~A_crueltyfree3
+  
+  A_organic ~~ 1*A_organic
+  A_packaging ~~ 1*A_packaging
+  A_crueltyfree ~~ 1*A_crueltyfree
+  A_organic ~~ A_packaging
+  A_organic ~~ A_crueltyfree
+  A_packaging ~~ A_crueltyfree
+  
+  #structural model
+  BI_organic ~p*A_organic
+  BI_packaging ~p*A_packaging
+  BI_crueltyfree ~p*A_crueltyfree
+  '
+fitsem2 <- sem(sem2,sample.cov = cormat, sample.nobs = nrow(cosmetics))
+sum_sem2 <- summary(fitsem2)
+sum_sem2_std <- standardizedSolution(fitsem2)
+anovasem <- anova(fitsem1,fitsem2)
+anovasemp <- anovasem$`Pr(>Chisq)`[2]
+```
+```{r SEMregression, echo=FALSE, message=FALSE, warning=FALSE}
+sum_sem2$pe[49:51,] %>% 
+  mutate (Regression_coefficient = sprintf("%s%s\n%s",lhs, op, rhs),
+          stars = stars.pval(pvalue),
+         sem2 = sprintf("%.2f %s", est, 
+                         stars)) %>%
+  dplyr::select(Regression_coefficient, sem2) -> sem2regression
+#standardized results
+sum_sem2_std[49:51,] %>% 
+  mutate (Regression_coefficient = sprintf("%s%s\n%s",lhs, op, rhs),
+          stars = stars.pval(pvalue),
+         sem2_std = sprintf("%.2f %s", est.std, 
+                         stars)) %>%
+  left_join(sem1regression) %>%
+  left_join(sem1regression_std) %>%
+  left_join(sem2regression) %>%
+  dplyr::select(Regression_coefficient, sem1, sem1_std, sem2, sem2_std) %>%
+  kable(booktabs = T,
+        col.names = c("Regression coefficient",	"unstandardized",
+                      "standardized",	"unstandardized",	"standardized"),
+        caption = "Population regression coefficients in both SEMs.") %>%
+  add_header_above(c(" " = 1, "General SEM" = 2, "Equal population regression coefficients" = 2)) %>%
+  column_spec(1, width = "3cm") %>%
+  column_spec(2:5, width = "2.8cm") 
+  
+```
+With a test statistics of `r round(sum_sem2$test$standard$stat, 2)` with `r sum_sem2$test$standard$df` degrees of freedom, the chi-square p-value is `r round(sum_sem2$test$standard$pvalue,3)` which means we can reject the null hypothesis that the model fits well. 
+
+Since an anova test for the two SEMs has a p-value of `r round(anovasemp,3)`, we cannot reject the null hypothesis that the models are the same, meaning this new, simpler SEM fits as well as the more elaborate model.  The unstandardized and standardized regression coefficients are shown in respectively the third and fourth column of Table \@ref(tab:SEMregression).
+
+
+- an increase of one unit in attitude_organic increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_packaging increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_packaging", rhs == "A_packaging") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_crueltyfree increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_crueltyfree", rhs == "A_crueltyfree") %>% pull(est.std),3)`.
+
 # Task 2
+
 
 Benefits.Rdata is loaded from our terminal locally.
 
@@ -84,9 +690,6 @@ Benefits.Rdata is loaded from our terminal locally.
 load(find_root_file("data/benefits.Rdata", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 ```
-
-## Canonical correlation analysis
-
 We then preprocess the benefits data for the canonical correlaton analysis. A summary of the analysis is presented and redundacies are further computed.  
 
 ```{r cca, include=FALSE, message=FALSE, warning=FALSE}
@@ -161,3 +764,4 @@ round(cor(train.X2,train.X2),3)
 ```
 
 We then utilized the split-half approach for conducting canonical correlation analysis on both validation and training dataset to examine the validity of the results.  From the reliability of the canonical variates for Y and X variables, we can observe that the Xcan1 and Ycan1 contributes 0.482 and 0.468 in the comparisons of the elements which are considered reliable compared to their counterparts. The off-diagonal elements are close to 0 which is considered as normal because the canonical variates compared are based on different datasets so there should be very less correlations. 
+

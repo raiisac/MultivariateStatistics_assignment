@@ -1,0 +1,99 @@
+---
+title: "Assignment1a-Wenting"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assignment 1 a
+
+To conduct CFA on the attitude items using the covariance matrix, we first center the data. 
+```
+cess2<-cosmetics[,0:9]
+cess2<-scale(cess2,center=TRUE,scale=FALSE)
+```
+
+The three correlated factors are Att_organic, Att_packaging, and Att_crueltyfree. The measurement model for the latent models are highlighted below. For each latent variable, the loading of the first indicator variable is constrained to 1, in order to identify the model. In addition, we explicitly specify the estimation of the variance for the latent variable, as well as the estimation of the correlation between the the latent variables.
+
+```
+cfa1<-' Att_organic=~1*Attitude_organic1+Attitude_organic2+Attitude_organic3         
+        Att_packaging=~1*Attitude_packaging1+Attitude_packaging2 +Attitude_packaging3
+        Att_crueltyfree=~1*Attitude_crueltyfree1+Attitude_crueltyfree2+Attitude_crueltyfree3
+        Att_organic ~~Att_organic
+        Att_packaging ~~Att_packaging
+        Att_crueltyfree ~~Att_crueltyfree
+         Att_organic ~~Att_packaging+Att_crueltyfree
+         Att_crueltyfree~~Att_packaging
+         
+fitcfa1<-cfa(cfa1,cess2)
+fitmeasures(fitcfa1,c("chisq","df", "pvalue", "cfi","tli","rmsea","srmr"))
+summary(fitcfa1,fit.measures=TRUE)
+```
+From the fit measures, we can see the model is rejected by the absolute goodness of fit, as seen in the very small p-value. This kind of test is sensitive to sample size. As the number of observations is large, there is a high statistical power to reject the null hypothesis. As an alternative, we can look into the descriptive fit measures to see if the model meets the requirement of cut-off criteria. CFI and TLI are below the cut-off of 0.95. SRMR is less than the cut-off of 0.08, but RMSEA is above it. This shows that the model needs some improvement.
+
+```
+standardizedSolution(fitcfa1)
+```
+As the standardized loadings are the correlations between the latent variables and the indicator variables, we can see that the each pairs of latent variables has a substantial correlation (between 0.603 and 0.739), which is also significant. As these correlations are lower than 1, discriminant validity has been satisfied.
+
+On the one hand, we could also see that all standardized loadings are above 0.7. Therefore, the squared loadings are higher than 0.5. This reflects a sufficient reliability of the indicator variables. Since all the standardized loadings are positive and significant, there is convergent validity.
+
+```
+#reliability factor scores
+d<-standardizedSolution(fitcfa1)
+#composite reliability Att_organic
+compositerel(d[1:3,4])
+#composite reliability Att_packaging
+compositerel(d[4:6,4])
+#composite reliability Att_crueltyfree
+compositerel(d[7:9,4])
+
+#overview table composite reliability
+factorscore<-c("Att_organic","Att_packaging","Att_crueltyfree")
+reliability<-round(c(compositerel(d[1:3,4]),compositerel(d[4:6,4]),compositerel(d[7:9,4])),3)
+data.frame(factorscore,reliability)
+```
+
+On the other hand, composite reliability measures the reliability of the factor scores. We can see that the composite reliability values are high, therefore, the factors are measured in a reliable way.
+
+The next step is to add the correlated error terms, therefore relaxing the assumption that the error terms are uncorrelated. A constraint is imposed such that the residual correlations for all pairs of items that focus on the same aspect are the same.
+
+```
+cfa2<-' Att_organic=~1*Attitude_organic1+Attitude_organic2+Attitude_organic3         
+        Att_packaging=~1*Attitude_packaging1+Attitude_packaging2 +Attitude_packaging3
+        Att_crueltyfree=~1*Attitude_crueltyfree1+Attitude_crueltyfree2+Attitude_crueltyfree3
+        Att_organic ~~Att_organic
+        Att_packaging ~~Att_packaging
+        Att_crueltyfree ~~Att_crueltyfree
+        
+         Attitude_organic1 ~~a*Attitude_packaging1
+         Attitude_organic1 ~~a*Attitude_crueltyfree1
+        Attitude_packaging1 ~~a*Attitude_crueltyfree1
+         
+         Attitude_organic2 ~~b*Attitude_packaging2
+         Attitude_organic2~~b*Attitude_crueltyfree2
+        Attitude_packaging2 ~~b*Attitude_crueltyfree2
+        
+        Attitude_organic3 ~~c*Attitude_packaging3
+        Attitude_organic3 ~~c*Attitude_crueltyfree3
+        Attitude_packaging3 ~~c*Attitude_crueltyfree3
+        '
+```
+We could see the model chi-squared has been reduced. Both CFI and TLI are above the cut-off of 0.95. Although RMSEA is still higher than 0.08, it is lower than the RMSEA from the previous model. 
+
+As one important goal of the factor analysis is to explain the observed correlation, we can compare the residual correlation between the two models. 
+
+```
+#compute residual correlations
+cor_table <- residuals(fitcfa1, type = "cor")$cov
+#compute number of residual correlations with absolute value larger than 0.05 below the diagonal
+n<-sum(ifelse(abs(cor_table)>0.05,1,0))/2
+print(n/(9*8/2))
+```
+From the residual correlation, we see that the CFA reproduces the correlations between the observed variables well, because absolute values of most residual correlations are smaller than 0.05. As proportion of residual correlations with absolute value larger than 0.05 below the diagonal is 27.7% and 19.4% for the first and second model respectively, we can see that the second model has a better descriptive fit using this criteria. 
+
+
