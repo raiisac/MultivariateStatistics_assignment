@@ -13,8 +13,11 @@ output:
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
-library(candisc)
+
+update.packages("rlang")
+library(xfun)
 library(tidyverse)
+library(candisc)
 library(rprojroot)
 library(lavaan)
 library(tidySEM)#to graphically represent SEM
@@ -679,4 +682,86 @@ Since an anova test for the two SEMs has a p-value of `r round(anovasemp,3)`, we
 - an increase of one unit in attitude_crueltyfree increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_crueltyfree", rhs == "A_crueltyfree") %>% pull(est.std),3)`.
 
 # Task 2
+
+
+Benefits.Rdata is loaded from our terminal locally.
+
+```{r load2, include=FALSE, message=FALSE, warning=FALSE}
+load(find_root_file("data/benefits.Rdata", 
+     criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+We then preprocess the benefits data for the canonical correlaton analysis. A summary of the analysis is presented and redundacies are further computed.  
+
+```{r cca, include=FALSE, message=FALSE, warning=FALSE}
+zbenefits<-benefits
+zbenefits[,2:14]<-scale(zbenefits[,2:14],scale=TRUE,center=TRUE) 
+
+
+cancor.out<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
+~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
+SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
+SB_often_lessthanentitled+ SB_often_notentitled , data=zbenefits) 
+
+#print summary results 
+summary(cancor.out)
+
+#compute redundancies 
+R2tu<-cancor.out$cancor^2 
+R2tu<-cancor.out$cancor^2 
+VAFYbyt<-apply(cancor.out$structure$Y.yscores^2,2,sum)/3 
+redund<-R2tu*VAFYbyt 
+round(cbind(R2tu,VAFYbyt,redund,total=cumsum(redund)),4) 
+
+#print canonical loadings 
+round(cancor.out$structure$X.xscores,2) 
+round(cancor.out$structure$Y.yscores,2)
+
+```
+
+From the canonical correlation analysis results, we can conclude that there are 4 pairs of canonical variates. However, according to the results of the hypotheses tests, we can observe that the fourth pair is not significant as the H0 cannot be rejected at he 5% significant level which the Pr(> F) is 0.1735. 
+
+Also the canonical correlation analysis results, we can observe that the first pair contributes 48.3% of the variance of the canonical variate which its canonical correlation is 0.233. In the meantime, the second one contributes 22.8% which its canonical correlation is 0.052 while the third one contributes 13.7% which its canonical correlation is 0.137.
+From the variance results, the three pairs contribute 11.78% in terms of variance for Y variables. 
+
+## Split-half approach
+
+```{r spa, include=FALSE, message=FALSE, warning=FALSE}
+
+train <- benefits[seq(2,3310,by=2),]
+valid <- benefits[seq(1,3310,by=2),]
+train[,2:14]<-scale(train[,2:14],center=TRUE,scale=TRUE)
+valid[,2:14]<-scale(valid[,2:14],center=TRUE,scale=TRUE)
+
+#conduct CCA on training data
+
+cancor.train<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
+~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
+SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
+SB_often_lessthanentitled+ SB_often_notentitled , data=train) 
+
+#conduct CCA on validation data
+
+cancor.valid<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
+~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
+SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
+SB_often_lessthanentitled+ SB_often_notentitled , data=valid) 
+
+# canonical variates calibration set
+train.X1<-cancor.train$score$X
+train.Y1<-cancor.train$score$Y
+
+# compute canonical variates using data of calibration set and coefficients estimated on validation set
+train.X2<-as.matrix(train[,6:14])%*%cancor.valid$coef$X
+train.Y2<-as.matrix(train[,2:5])%*%cancor.valid$coef$Y
+
+round(cor(train.Y1,train.Y2),3) 
+round(cor(train.X1,train.X2),3) 
+round(cor(train.X1,train.Y1),3) 
+round(cor(train.X2,train.Y2),3) 
+round(cor(train.Y2,train.Y2),3) 
+round(cor(train.X2,train.X2),3)
+
+```
+
+We then utilized the split-half approach for conducting canonical correlation analysis on both validation and training dataset to examine the validity of the results.  From the reliability of the canonical variates for Y and X variables, we can observe that the Xcan1 and Ycan1 contributes 0.482 and 0.468 in the comparisons of the elements which are considered reliable compared to their counterparts. The off-diagonal elements are close to 0 which is considered as normal because the canonical variates compared are based on different datasets so there should be very less correlations. 
 
