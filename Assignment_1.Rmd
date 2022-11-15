@@ -683,39 +683,40 @@ Since an anova test for the two SEMs has a p-value of `r round(anovasemp,3)`, we
 
 # Task 2
 
-
 Benefits.Rdata is loaded from our terminal locally.
 
 ```{r load2, include=FALSE, message=FALSE, warning=FALSE}
 load(find_root_file("data/benefits.Rdata", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 ```
-We then preprocess the benefits data for the canonical correlaton analysis. A summary of the analysis is presented and redundacies are further computed.  
 
-```{r cca, include=FALSE, message=FALSE, warning=FALSE}
-zbenefits<-benefits
-zbenefits[,2:14]<-scale(zbenefits[,2:14],scale=TRUE,center=TRUE) 
+## Canonical correlation analysis
+
+We then preprocess the benefits data for the canonical correlation analysis. A summary of the analysis is presented and redundancies are further computed.  
+
+```{r cca, include=TRUE, message=FALSE, warning=FALSE}
+zbenefits <- benefits
+zbenefits[, 2:14] <- scale(zbenefits[, 2:14], scale = TRUE, center = TRUE) 
 
 
-cancor.out<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
-~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
-SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
-SB_often_lessthanentitled+ SB_often_notentitled , data=zbenefits) 
-
+cancor.out <- cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp,
+                           SL_unemp_gvntresp) 
+                     ~ SB_strain_economy + SB_prevent_poverty + 
+                       SB_equal_society + SB_taxes_business +
+                       SB_make_lazy + SB_caring_others + 
+                       unemployed_notmotivated + SB_often_lessthanentitled +
+                       SB_often_notentitled, data = zbenefits) 
 #print summary results 
 summary(cancor.out)
-
 #compute redundancies 
-R2tu<-cancor.out$cancor^2 
-R2tu<-cancor.out$cancor^2 
-VAFYbyt<-apply(cancor.out$structure$Y.yscores^2,2,sum)/3 
-redund<-R2tu*VAFYbyt 
-round(cbind(R2tu,VAFYbyt,redund,total=cumsum(redund)),4) 
-
+R2tu <- cancor.out$cancor^2 
+R2tu <- cancor.out$cancor^2 
+VAFYbyt <- apply(cancor.out$structure$Y.yscores^2, 2, sum)/3 
+redund <- R2tu*VAFYbyt 
+round(cbind(R2tu,VAFYbyt,redund,total = cumsum(redund)), 4) 
 #print canonical loadings 
-round(cancor.out$structure$X.xscores,2) 
-round(cancor.out$structure$Y.yscores,2)
-
+round(cancor.out$structure$X.xscores, 2) 
+round(cancor.out$structure$Y.yscores, 2)
 ```
 
 From the canonical correlation analysis results, we can conclude that there are 4 pairs of canonical variates. However, according to the results of the hypotheses tests, we can observe that the fourth pair is not significant as the H0 cannot be rejected at he 5% significant level which the Pr(> F) is 0.1735. 
@@ -725,43 +726,105 @@ From the variance results, the three pairs contribute 11.78% in terms of varianc
 
 ## Split-half approach
 
-```{r spa, include=FALSE, message=FALSE, warning=FALSE}
-
-train <- benefits[seq(2,3310,by=2),]
-valid <- benefits[seq(1,3310,by=2),]
-train[,2:14]<-scale(train[,2:14],center=TRUE,scale=TRUE)
-valid[,2:14]<-scale(valid[,2:14],center=TRUE,scale=TRUE)
+```{r spa, include=TRUE, message=FALSE, warning=FALSE}
+train <- benefits[seq(2,3310, by = 2), ]
+valid <- benefits[seq(1,3310, by = 2), ]
+train[,2:14] <- scale(train[, 2:14], center = TRUE, scale = TRUE)
+valid[,2:14] <- scale(valid[, 2:14], center = TRUE, scale = TRUE)
 
 #conduct CCA on training data
-
-cancor.train<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
-~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
-SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
-SB_often_lessthanentitled+ SB_often_notentitled , data=train) 
-
+cancor.train <- cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp,
+                             SL_unemp_gvntresp) 
+                       ~ SB_strain_economy + SB_prevent_poverty + 
+                         SB_equal_society + SB_taxes_business +
+                         SB_make_lazy + SB_caring_others + 
+                         unemployed_notmotivated + SB_often_lessthanentitled +
+                         SB_often_notentitled, data = train) 
 #conduct CCA on validation data
-
-cancor.valid<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
-~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
-SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
-SB_often_lessthanentitled+ SB_often_notentitled , data=valid) 
-
+cancor.valid <- cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp,
+                             SL_unemp_gvntresp) 
+                       ~ SB_strain_economy + SB_prevent_poverty + 
+                         SB_equal_society + SB_taxes_business +
+                         SB_make_lazy + SB_caring_others +
+                         unemployed_notmotivated + SB_often_lessthanentitled +
+                         SB_often_notentitled, data = valid) 
 # canonical variates calibration set
-train.X1<-cancor.train$score$X
-train.Y1<-cancor.train$score$Y
-
-# compute canonical variates using data of calibration set and coefficients estimated on validation set
-train.X2<-as.matrix(train[,6:14])%*%cancor.valid$coef$X
-train.Y2<-as.matrix(train[,2:5])%*%cancor.valid$coef$Y
-
+train.X1 <- cancor.train$score$X
+train.Y1 <- cancor.train$score$Y
+# compute canonical variates using data of calibration set and coefficients
+# estimated on validation set
+train.X2 <- as.matrix(train[,6:14]) %*% cancor.valid$coef$X
+train.Y2 <- as.matrix(train[,2:5]) %*% cancor.valid$coef$Y
 round(cor(train.Y1,train.Y2),3) 
 round(cor(train.X1,train.X2),3) 
 round(cor(train.X1,train.Y1),3) 
 round(cor(train.X2,train.Y2),3) 
 round(cor(train.Y2,train.Y2),3) 
 round(cor(train.X2,train.X2),3)
-
 ```
 
-We then utilized the split-half approach for conducting canonical correlation analysis on both validation and training dataset to examine the validity of the results.  From the reliability of the canonical variates for Y and X variables, we can observe that the Xcan1 and Ycan1 contributes 0.482 and 0.468 in the comparisons of the elements which are considered reliable compared to their counterparts. The off-diagonal elements are close to 0 which is considered as normal because the canonical variates compared are based on different datasets so there should be very less correlations. 
+We then utilized the split-half approach for conducting canonical correlation analysis on both validation and training dataset to examine the validity of the results. From the reliability of the canonical variates for Y and X variables, we can observe that the Xcan1 and Ycan1 contributes 0.482 and 0.468 in the comparisons of the elements which are considered reliable compared to their counterparts. The off-diagonal elements are close to 0 which is considered as normal because the canonical variates compared are based on different datasets so there should be very less correlations. 
 
+
+# Appendix
+```{r CFA1graphical, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "A_organic1", "A_organic2", "A_organic3",
+                  "A_packaging1", "A_packaging2", "A_packaging3",
+                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3",
+                  rows = 2)
+p <- graph_sem(model = fit1a, layout = lay)
+if (!file.exists("figures/CFA1graphical.png")) {
+  ggsave("figures/CFA1graphical.png", p,
+         device = "png", width = 11, height = 4)}
+knitr::include_graphics(find_root_file("figures/CFA1graphical.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+```{r CFA1graphicalcorr, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the model for the attitudeswith correlated error terms for all pairs of items that focus on the same aspect.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "A_organic1", "A_organic2", "A_organic3",
+                  "A_packaging1", "A_packaging2", "A_packaging3",
+                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3",
+                  "",  "right","","","pleasant","","","must","",
+                  rows = 3)
+p <- graph_sem(model = fit1acorr, layout = lay)
+if (!file.exists("figures/CFA1graphicalcorr.png")) {
+  ggsave("figures/CFA1graphicalcorr.png", p,
+         device = "png", width = 11, height = 5)
+  }
+knitr::include_graphics(find_root_file("figures/CFA1graphicalcorr.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+
+```{r CFA1graphicalBI, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the behavior-intent items.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "BI_organic1", "BI_organic2", "BI_organic3",
+                  "BI_packaging1", "BI_packaging2", "BI_packaging3",
+                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3",
+                  rows = 2)
+p <- graph_sem(model = fit1, layout = lay)
+if (!file.exists("figures/CFA1graphical_BI.png")) {
+  ggsave(find_root_file("figures/CFA1graphical_BI.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")), p,
+         device = "png", width = 11, height = 4)}
+knitr::include_graphics(find_root_file("figures/CFA1graphical_BI.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+```{r CFA1graphicalcorrBI, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the model with correlated error terms for the behavior-intent items that focus on the same aspect.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "BI_organic1", "BI_organic2", "BI_organic3",
+                  "BI_packaging1", "BI_packaging2", "BI_packaging3",
+                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3",
+                  "",  "right","","","pleasant","","","must","",
+                  rows = 3)
+p <- graph_sem(model = fit1corr, layout = lay)
+if (!file.exists("figures/CFA1graphicalcorrBI.png")) {
+  ggsave("figures/CFA1graphicalcorrBI.png", p,
+         device = "png", width = 11, height = 5)
+  }
+knitr::include_graphics(find_root_file("figures/CFA1graphicalcorrBI.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
