@@ -509,19 +509,15 @@ cormat <- cov(cosmetics_std)
 sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   BI_packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
   BI_crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
-  
   BI_organic1 ~~c*BI_packaging1 
   BI_organic1 ~~c*BI_crueltyfree1
   BI_packaging1 ~~c*BI_crueltyfree1
-  
   BI_organic2 ~~d*BI_packaging2 
   BI_organic2 ~~d*BI_crueltyfree2
   BI_packaging2 ~~d*BI_crueltyfree2
-  
   BI_organic3 ~~e*BI_packaging3 
   BI_organic3 ~~e*BI_crueltyfree3
   BI_packaging3 ~~e*BI_crueltyfree3
-  
   BI_organic ~~ BI_organic
   BI_packaging ~~ BI_packaging
   BI_crueltyfree ~~ BI_crueltyfree
@@ -535,19 +531,15 @@ sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   A_organic1 ~~a*A_packaging1 
   A_organic1 ~~a*A_crueltyfree1
   A_packaging1 ~~a*A_crueltyfree1
-  
   A_organic2 ~~b*A_packaging2 
   A_organic2 ~~b*A_crueltyfree2
   A_packaging2 ~~b*A_crueltyfree2
-  
   A_organic3 ~~A_packaging3 
   A_organic3 ~~A_crueltyfree3
   A_packaging3 ~~A_crueltyfree3
-  
   A_organic ~~ 1*A_organic
   A_packaging ~~ 1*A_packaging
   A_crueltyfree ~~ 1*A_crueltyfree
-  
   A_organic ~~ A_packaging
   A_organic ~~ A_crueltyfree
   A_packaging ~~ A_crueltyfree
@@ -557,7 +549,7 @@ sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   BI_packaging ~A_packaging
   BI_crueltyfree ~A_crueltyfree
   '
-fitsem1 <-sem(sem1,sample.cov=cormat, sample.nobs = nrow(cosmetics))
+fitsem1 <- sem(sem1, sample.cov = cormat, sample.nobs = nrow(cosmetics))
 sum_sem1 <- summary(fitsem1)
 sum_sem1_std <- standardizedSolution(fitsem1)
 ```
@@ -566,20 +558,20 @@ With a test statistics of `r round(sum_sem1$test$standard$stat, 2)` with `r sum_
 ```{r SEM2, echo=FALSE, message=FALSE, warning=FALSE}
 #summary SEM results
 sum_sem1$pe[49:51,] %>% 
-  mutate (Regression_coefficient = sprintf("%s%s%s",lhs, op, rhs),
+  mutate (Regression_coefficient = sprintf("%s%s\n%s",lhs, op, rhs),
           stars = stars.pval(pvalue),
          sem1 = sprintf("%.2f %s", est, 
                          stars)) %>%
   dplyr::select(Regression_coefficient, sem1) -> sem1regression
 #standardized results
 sum_sem1_std[49:51,] %>% 
-  mutate (Regression_coefficient = sprintf("%s%s%s",lhs, op, rhs),
+  mutate (Regression_coefficient = sprintf("%s%s\n%s",lhs, op, rhs),
           stars = stars.pval(pvalue),
          sem1_std = sprintf("%.2f %s", est.std, 
                          stars))%>%
   dplyr::select(Regression_coefficient, sem1_std) -> sem1regression_std
 ```
-The structural equation model shows that all correlations between latent variables are positive and highly significant. 
+The structural equation model shows that all correlations between latent variables are positive and highly significant. The unstandardized and standardized regression coefficients are shown in respectively the first and second column of Table \@ref(tab:SEMregression).
 
 - an increase of one unit in attitude_organic increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
 - an increase of one unit in attitude_packaging increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_packaging", rhs == "A_packaging") %>% pull(est.std),3)`.
@@ -588,7 +580,17 @@ The structural equation model shows that all correlations between latent variabl
 These population regression coefficients are quite similar so we next test a model that imposes that all three regression coefficients are the same.
 
 ### Equal population regression coefficients
-```{r SEM2_1, echo=TRUE, message=FALSE, warning=FALSE}
+To fit a model with equal population regression coefficients, we replace the *structural model* part in the previous SEM description with the expression below and re-fit the model.
+
+```{r echo=T, results='hide'}
+'  #structural model
+  BI_organic ~p*A_organic
+  BI_packaging ~p*A_packaging
+  BI_crueltyfree ~p*A_crueltyfree'
+```
+
+
+```{r SEM2_1, echo=FALSE, message=FALSE, warning=FALSE}
 sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   BI_packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
   BI_crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
@@ -643,14 +645,14 @@ anovasemp <- anovasem$`Pr(>Chisq)`[2]
 ```
 ```{r SEMregression, echo=FALSE, message=FALSE, warning=FALSE}
 sum_sem2$pe[49:51,] %>% 
-  mutate (Regression_coefficient = sprintf("%s%s%s",lhs, op, rhs),
+  mutate (Regression_coefficient = sprintf("%s%s\n%s",lhs, op, rhs),
           stars = stars.pval(pvalue),
          sem2 = sprintf("%.2f %s", est, 
                          stars)) %>%
   dplyr::select(Regression_coefficient, sem2) -> sem2regression
 #standardized results
 sum_sem2_std[49:51,] %>% 
-  mutate (Regression_coefficient = sprintf("%s%s%s",lhs, op, rhs),
+  mutate (Regression_coefficient = sprintf("%s%s\n%s",lhs, op, rhs),
           stars = stars.pval(pvalue),
          sem2_std = sprintf("%.2f %s", est.std, 
                          stars)) %>%
@@ -667,8 +669,9 @@ sum_sem2_std[49:51,] %>%
   column_spec(2:5, width = "2.8cm") 
   
 ```
+With a test statistics of `r round(sum_sem2$test$standard$stat, 2)` with `r sum_sem2$test$standard$df` degrees of freedom, the chi-square p-value is `r round(sum_sem2$test$standard$pvalue,3)` which means we can reject the null hypothesis that the model fits well. 
 
-Since an anova test for the two SEMs has a p-value of `r round(anovasemp,3)`, we cannot reject the null hypothesis that the models are the same, meaning this new, simpler SEM fits as well as the more elaborate model.
+Since an anova test for the two SEMs has a p-value of `r round(anovasemp,3)`, we cannot reject the null hypothesis that the models are the same, meaning this new, simpler SEM fits as well as the more elaborate model.  The unstandardized and standardized regression coefficients are shown in respectively the third and fourth column of Table \@ref(tab:SEMregression).
 
 
 - an increase of one unit in attitude_organic increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
