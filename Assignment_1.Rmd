@@ -382,11 +382,9 @@ corrmodel1 <-
   BI_organic1 ~~c*BI_packaging1 
   BI_organic1 ~~c*BI_crueltyfree1
   BI_packaging1 ~~c*BI_crueltyfree1
-  
   BI_organic2 ~~d*BI_packaging2 
   BI_organic2 ~~d*BI_crueltyfree2
   BI_packaging2 ~~d*BI_crueltyfree2
-  
   BI_organic3 ~~e*BI_packaging3 
   BI_organic3 ~~e*BI_crueltyfree3
   BI_packaging3 ~~e*BI_crueltyfree3
@@ -528,9 +526,9 @@ sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   BI_organic ~~ BI_crueltyfree
   BI_packaging ~~ BI_crueltyfree
   
-  A_organic = ~NA*A_organic1 + A_organic2 + A_organic3
-  A_packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
-  A_crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  A_organic = ~1*A_organic1 + A_organic2 + A_organic3
+  A_packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
+  A_crueltyfree = ~1*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
   A_organic1 ~~a*A_packaging1 
   A_organic1 ~~a*A_crueltyfree1
   A_packaging1 ~~a*A_crueltyfree1
@@ -540,9 +538,9 @@ sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   A_organic3 ~~A_packaging3 
   A_organic3 ~~A_crueltyfree3
   A_packaging3 ~~A_crueltyfree3
-  A_organic ~~ 1*A_organic
-  A_packaging ~~ 1*A_packaging
-  A_crueltyfree ~~ 1*A_crueltyfree
+  A_organic ~~ A_organic
+  A_packaging ~~ A_packaging
+  A_crueltyfree ~~ A_crueltyfree
   A_organic ~~ A_packaging
   A_organic ~~ A_crueltyfree
   A_packaging ~~ A_crueltyfree
@@ -614,9 +612,9 @@ sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   BI_organic ~~ BI_crueltyfree
   BI_packaging ~~ BI_crueltyfree
   
-  A_organic = ~NA*A_organic1 + A_organic2 + A_organic3
-  A_packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
-  A_crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  A_organic = ~1*A_organic1 + A_organic2 + A_organic3
+  A_packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
+  A_crueltyfree = ~1*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
   
   A_organic1 ~~a*A_packaging1 
   A_organic1 ~~a*A_crueltyfree1
@@ -628,9 +626,9 @@ sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   A_organic3 ~~A_crueltyfree3
   A_packaging3 ~~A_crueltyfree3
   
-  A_organic ~~ 1*A_organic
-  A_packaging ~~ 1*A_packaging
-  A_crueltyfree ~~ 1*A_crueltyfree
+  A_organic ~~ A_organic
+  A_packaging ~~ A_packaging
+  A_crueltyfree ~~ A_crueltyfree
   A_organic ~~ A_packaging
   A_organic ~~ A_crueltyfree
   A_packaging ~~ A_crueltyfree
@@ -672,9 +670,9 @@ sum_sem2_std[49:51,] %>%
   column_spec(2:5, width = "2.8cm") 
   
 ```
-With a test statistics of `r round(sum_sem2$test$standard$stat, 2)` with `r sum_sem2$test$standard$df` degrees of freedom, the chi-square p-value is `r round(sum_sem2$test$standard$pvalue,3)` which means we can reject the null hypothesis that the model fits well. 
+With a test statistics of `r round(sum_sem2$test$standard$stat, 2)` with `r sum_sem2$test$standard$df` degrees of freedom, the chi-square p-value is `r round(sum_sem2$test$standard$pvalue,3)` which means we cannot reject the null hypothesis that the model fits well. 
 
-Since an anova test for the two SEMs has a p-value of `r round(anovasemp,3)`, we cannot reject the null hypothesis that the models are the same, meaning this new, simpler SEM fits as well as the more elaborate model.  The unstandardized and standardized regression coefficients are shown in respectively the third and fourth column of Table \@ref(tab:SEMregression).
+Since an anova test for the two SEMs has a p-value of `r round(anovasemp,3)`, we cannot reject the null hypothesis that the models are the same. Nevertheless, the chi-square test was slightly better so we prefer this simpler model with equal population regression coefficients of the structural model. The unstandardized and standardized regression coefficients are shown in respectively the third and fourth column of Table \@ref(tab:SEMregression).
 
 
 - an increase of one unit in attitude_organic increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
