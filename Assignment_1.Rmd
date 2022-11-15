@@ -159,3 +159,5 @@ round(cor(train.Y2,train.Y2),3)
 round(cor(train.X2,train.X2),3)
 
 ```
+
+We then utilized the split-half approach for conducting canonical correlation analysis on both validation and training dataset to examine the validity of the results.  From the reliability of the canonical variates for Y and X variables, we can observe that the Xcan1 and Ycan1 contributes 0.482 and 0.468 in the comparisons of the elements which are considered reliable compared to their counterparts. The off-diagonal are close to 0 which is considered as normal because the canonical variates compared are based on different datasets so there should be very less correlations. 
