@@ -501,6 +501,9 @@ We first fit a structural equation model on the covariance matrix of all items.
 - A_organic, A_packaging, and A_crueltyfree are related to the attitude items  with a model with correlated error terms for pairs of items that focus on the same aspects. For statements that focus on “the right thing to do” or “pleasant”, there are equal correlations. As discussed in section \@ref(conc1a), we relax the constraint of equal residual correlations for items that focus on the fact that purchasing sustainable cosmetics is “a must”. 
 - BI_organic, BI_packaging, and BI_crueltyfree are related to the attitude items  with a model with correlated error terms for pairs of items that focus on the same aspects. As discussed in section \@ref(conc1b), a model that imposes the constraint of equal residual correlations for all pairs of items that focus on the same aspect has a good fit and will be used here.
 
+Structural relations are added to assess the effect of (1) Att_organic on BI_organic, (2) Att_packaging on BI_packaging and (3)
+Att_crueltyfree on BI_crueltyfree.
+
 ```{r SEM, echo=TRUE, message=FALSE, warning=FALSE}
 cormat <- cov(cosmetics_std)
 sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
@@ -529,13 +532,13 @@ sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   A_organic = ~NA*A_organic1 + A_organic2 + A_organic3
   A_packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
   A_crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
-  A_organic1 ~~c*A_packaging1 
-  A_organic1 ~~c*A_crueltyfree1
-  A_packaging1 ~~c*A_crueltyfree1
+  A_organic1 ~~a*A_packaging1 
+  A_organic1 ~~a*A_crueltyfree1
+  A_packaging1 ~~a*A_crueltyfree1
   
-  A_organic2 ~~d*A_packaging2 
-  A_organic2 ~~d*A_crueltyfree2
-  A_packaging2 ~~d*A_crueltyfree2
+  A_organic2 ~~b*A_packaging2 
+  A_organic2 ~~b*A_crueltyfree2
+  A_packaging2 ~~b*A_crueltyfree2
   
   A_organic3 ~~A_packaging3 
   A_organic3 ~~A_crueltyfree3
@@ -558,13 +561,23 @@ fitsem1 <-sem(sem1,sample.cov=cormat, sample.nobs = nrow(cosmetics))
 sum_sem1 <- summary(fitsem1)
 sum_sem1_std <- standardizedSolution(fitsem1)
 ```
-With a test statistics of `r round(sum_sem1$test$standard$stat, 2)` with `r sum_sem1$test$standard$df` degrees of freedom, the chi-square p-value is `r sum_sem1$test$standard$pvalue` which means we cannot reject the null hypothesis that the model fits well. 
+With a test statistics of `r round(sum_sem1$test$standard$stat, 2)` with `r sum_sem1$test$standard$df` degrees of freedom, the chi-square p-value is `r round(sum_sem1$test$standard$pvalue,3)` which means we can reject the null hypothesis that the model fits well. 
  
 ```{r SEM2, echo=FALSE, message=FALSE, warning=FALSE}
 #summary SEM results
-sum_sem1
+sum_sem1$pe[49:51,] %>% 
+  mutate (Regression_coefficient = sprintf("%s%s%s",lhs, op, rhs),
+          stars = stars.pval(pvalue),
+         sem1 = sprintf("%.2f %s", est, 
+                         stars)) %>%
+  dplyr::select(Regression_coefficient, sem1) -> sem1regression
 #standardized results
-sum_sem1_std
+sum_sem1_std[49:51,] %>% 
+  mutate (Regression_coefficient = sprintf("%s%s%s",lhs, op, rhs),
+          stars = stars.pval(pvalue),
+         sem1_std = sprintf("%.2f %s", est.std, 
+                         stars))%>%
+  dplyr::select(Regression_coefficient, sem1_std) -> sem1regression_std
 ```
 The structural equation model shows that all correlations between latent variables are positive and highly significant. 
 
@@ -583,15 +596,12 @@ sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   BI_organic1 ~~c*BI_packaging1 
   BI_organic1 ~~c*BI_crueltyfree1
   BI_packaging1 ~~c*BI_crueltyfree1
-  
   BI_organic2 ~~d*BI_packaging2 
   BI_organic2 ~~d*BI_crueltyfree2
   BI_packaging2 ~~d*BI_crueltyfree2
-  
   BI_organic3 ~~e*BI_packaging3 
   BI_organic3 ~~e*BI_crueltyfree3
   BI_packaging3 ~~e*BI_crueltyfree3
-  
   BI_organic ~~ BI_organic
   BI_packaging ~~ BI_packaging
   BI_crueltyfree ~~ BI_crueltyfree
@@ -602,14 +612,13 @@ sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   A_organic = ~NA*A_organic1 + A_organic2 + A_organic3
   A_packaging = ~NA*A_packaging1 + A_packaging2 + A_packaging3
   A_crueltyfree = ~NA*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
-  A_organic1 ~~c*A_packaging1 
-  A_organic1 ~~c*A_crueltyfree1
-  A_packaging1 ~~c*A_crueltyfree1
   
-  A_organic2 ~~d*A_packaging2 
-  A_organic2 ~~d*A_crueltyfree2
-  A_packaging2 ~~d*A_crueltyfree2
-  
+  A_organic1 ~~a*A_packaging1 
+  A_organic1 ~~a*A_crueltyfree1
+  A_packaging1 ~~a*A_crueltyfree1
+  A_organic2 ~~b*A_packaging2 
+  A_organic2 ~~b*A_crueltyfree2
+  A_packaging2 ~~b*A_crueltyfree2
   A_organic3 ~~A_packaging3 
   A_organic3 ~~A_crueltyfree3
   A_packaging3 ~~A_crueltyfree3
@@ -617,7 +626,6 @@ sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   A_organic ~~ 1*A_organic
   A_packaging ~~ 1*A_packaging
   A_crueltyfree ~~ 1*A_crueltyfree
-  
   A_organic ~~ A_packaging
   A_organic ~~ A_crueltyfree
   A_packaging ~~ A_crueltyfree
@@ -630,13 +638,37 @@ sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
 fitsem2 <- sem(sem2,sample.cov = cormat, sample.nobs = nrow(cosmetics))
 sum_sem2 <- summary(fitsem2)
 sum_sem2_std <- standardizedSolution(fitsem2)
-sum_sem2
-sum_sem2_std
 anovasem <- anova(fitsem1,fitsem2)
 anovasemp <- anovasem$`Pr(>Chisq)`[2]
 ```
+```{r SEMregression, echo=FALSE, message=FALSE, warning=FALSE}
+sum_sem2$pe[49:51,] %>% 
+  mutate (Regression_coefficient = sprintf("%s%s%s",lhs, op, rhs),
+          stars = stars.pval(pvalue),
+         sem2 = sprintf("%.2f %s", est, 
+                         stars)) %>%
+  dplyr::select(Regression_coefficient, sem2) -> sem2regression
+#standardized results
+sum_sem2_std[49:51,] %>% 
+  mutate (Regression_coefficient = sprintf("%s%s%s",lhs, op, rhs),
+          stars = stars.pval(pvalue),
+         sem2_std = sprintf("%.2f %s", est.std, 
+                         stars)) %>%
+  left_join(sem1regression) %>%
+  left_join(sem1regression_std) %>%
+  left_join(sem2regression) %>%
+  dplyr::select(Regression_coefficient, sem1, sem1_std, sem2, sem2_std) %>%
+  kable(booktabs = T,
+        col.names = c("Regression coefficient",	"unstandardized",
+                      "standardized",	"unstandardized",	"standardized"),
+        caption = "Population regression coefficients in both SEMs.") %>%
+  add_header_above(c(" " = 1, "General SEM" = 2, "Equal population regression coefficients" = 2)) %>%
+  column_spec(1, width = "3cm") %>%
+  column_spec(2:5, width = "2.8cm") 
+  
+```
 
-Since an anova test for the two sem models has a p-value of `r round(anovasemp,3)`, we cannot reject the null hypothesis that the models are the same, meaning this new, simpler SEM fits as well as the more elaborate model.
+Since an anova test for the two SEMs has a p-value of `r round(anovasemp,3)`, we cannot reject the null hypothesis that the models are the same, meaning this new, simpler SEM fits as well as the more elaborate model.
 
 
 - an increase of one unit in attitude_organic increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
@@ -646,7 +678,7 @@ Since an anova test for the two sem models has a p-value of `r round(anovasemp,3
 # Task 2
 
 ```{r load2, include=FALSE, message=FALSE, warning=FALSE}
-load(find_root_file("data/benefits.Rdata", 
+load(find_root_file("data/benefits.Rdata",
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 ```
 
@@ -655,27 +687,27 @@ load(find_root_file("data/benefits.Rdata",
 ```{r cca, include=TRUE, message=FALSE, warning=FALSE}
 library(candisc)
 zbenefits <- benefits
-zbenefits[,2:14] <- scale(zbenefits[,2:14],scale=TRUE,center=TRUE) 
+zbenefits[,2:14] <- scale(zbenefits[,2:14],scale=TRUE,center=TRUE)
 
 cancor.out <- cancor(
-  cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
+  cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp)
 ~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
 SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
-SB_often_lessthanentitled+ SB_often_notentitled, 
-data=zbenefits) 
+SB_often_lessthanentitled+ SB_often_notentitled,
+data=zbenefits)
 
-#print summary results 
+#print summary results
 summary(cancor.out)
 
-#compute redundancies 
-R2tu<-cancor.out$cancor^2 
-R2tu<-cancor.out$cancor^2 
-VAFYbyt<-apply(cancor.out$structure$Y.yscores^2,2,sum)/3 
-redund<-R2tu*VAFYbyt 
-round(cbind(R2tu,VAFYbyt,redund,total=cumsum(redund)),4) 
+#compute redundancies
+R2tu<-cancor.out$cancor^2
+R2tu<-cancor.out$cancor^2
+VAFYbyt<-apply(cancor.out$structure$Y.yscores^2,2,sum)/3
+redund<-R2tu*VAFYbyt
+round(cbind(R2tu,VAFYbyt,redund,total=cumsum(redund)),4)
 
-#print canonical loadings 
-round(cancor.out$structure$X.xscores,2) 
+#print canonical loadings
+round(cancor.out$structure$X.xscores,2)
 round(cancor.out$structure$Y.yscores,2)
 
 ```
@@ -692,17 +724,17 @@ valid[,2:14]<-scale(valid[,2:14],center=TRUE,scale=TRUE)
 
 #conduct CCA on training data
 
-cancor.train<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
+cancor.train<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp)
 ~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
 SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
-SB_often_lessthanentitled+ SB_often_notentitled , data=train) 
+SB_often_lessthanentitled+ SB_often_notentitled , data=train)
 
 #conduct CCA on validation data
 
-cancor.valid<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp) 
+cancor.valid<-cancor(cbind(SL_pensioners, SL_unemployed, SL_old_gvntresp, SL_unemp_gvntresp)
 ~SB_strain_economy+SB_prevent_poverty+SB_equal_society+
 SB_taxes_business+ SB_make_lazy+SB_caring_others+ unemployed_notmotivated+
-SB_often_lessthanentitled+ SB_often_notentitled , data=valid) 
+SB_often_lessthanentitled+ SB_often_notentitled , data=valid)
 
 # canonical variates calibration set
 train.X1<-cancor.train$score$X
@@ -712,11 +744,11 @@ train.Y1<-cancor.train$score$Y
 train.X2<-as.matrix(train[,6:14])%*%cancor.valid$coef$X
 train.Y2<-as.matrix(train[,2:5])%*%cancor.valid$coef$Y
 
-round(cor(train.Y1,train.Y2),3) 
-round(cor(train.X1,train.X2),3) 
-round(cor(train.X1,train.Y1),3) 
-round(cor(train.X2,train.Y2),3) 
-round(cor(train.Y2,train.Y2),3) 
+round(cor(train.Y1,train.Y2),3)
+round(cor(train.X1,train.X2),3)
+round(cor(train.X1,train.Y1),3)
+round(cor(train.X2,train.Y2),3)
+round(cor(train.Y2,train.Y2),3)
 round(cor(train.X2,train.X2),3)
 
 ```
@@ -724,62 +756,62 @@ round(cor(train.X2,train.X2),3)
 # Appendix
 ```{r CFA1graphical, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
 lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
-                  "A_organic1", "A_organic2", "A_organic3", 
-                  "A_packaging1", "A_packaging2", "A_packaging3", 
-                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3", 
+                  "A_organic1", "A_organic2", "A_organic3",
+                  "A_packaging1", "A_packaging2", "A_packaging3",
+                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3",
                   rows = 2)
 p <- graph_sem(model = fit1a, layout = lay)
 if (!file.exists("figures/CFA1graphical.png")) {
-  ggsave("figures/CFA1graphical.png", p, 
+  ggsave("figures/CFA1graphical.png", p,
          device = "png", width = 11, height = 4)}
-knitr::include_graphics(find_root_file("figures/CFA1graphical.png", 
+knitr::include_graphics(find_root_file("figures/CFA1graphical.png",
     criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 ```
 
 ```{r CFA1graphicalcorr, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the model for the attitudeswith correlated error terms for all pairs of items that focus on the same aspect.", out.width = "15cm", fig.align='center'}
 lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
-                  "A_organic1", "A_organic2", "A_organic3", 
-                  "A_packaging1", "A_packaging2", "A_packaging3", 
-                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3", 
+                  "A_organic1", "A_organic2", "A_organic3",
+                  "A_packaging1", "A_packaging2", "A_packaging3",
+                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3",
                   "",  "right","","","pleasant","","","must","",
                   rows = 3)
 p <- graph_sem(model = fit1acorr, layout = lay)
 if (!file.exists("figures/CFA1graphicalcorr.png")) {
-  ggsave("figures/CFA1graphicalcorr.png", p, 
+  ggsave("figures/CFA1graphicalcorr.png", p,
          device = "png", width = 11, height = 5)
   }
-knitr::include_graphics(find_root_file("figures/CFA1graphicalcorr.png", 
+knitr::include_graphics(find_root_file("figures/CFA1graphicalcorr.png",
     criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 ```
 
 
 ```{r CFA1graphicalBI, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the behavior-intent items.", out.width = "15cm", fig.align='center'}
 lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
-                  "BI_organic1", "BI_organic2", "BI_organic3", 
-                  "BI_packaging1", "BI_packaging2", "BI_packaging3", 
-                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3", 
+                  "BI_organic1", "BI_organic2", "BI_organic3",
+                  "BI_packaging1", "BI_packaging2", "BI_packaging3",
+                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3",
                   rows = 2)
 p <- graph_sem(model = fit1, layout = lay)
 if (!file.exists("figures/CFA1graphical_BI.png")) {
-  ggsave(find_root_file("figures/CFA1graphical_BI.png", 
-    criterion = has_file("MultivariateStatistics_assignment.Rproj")), p, 
+  ggsave(find_root_file("figures/CFA1graphical_BI.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")), p,
          device = "png", width = 11, height = 4)}
-knitr::include_graphics(find_root_file("figures/CFA1graphical_BI.png", 
+knitr::include_graphics(find_root_file("figures/CFA1graphical_BI.png",
     criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 ```
 
 ```{r CFA1graphicalcorrBI, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the model with correlated error terms for the behavior-intent items that focus on the same aspect.", out.width = "15cm", fig.align='center'}
 lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
-                  "BI_organic1", "BI_organic2", "BI_organic3", 
-                  "BI_packaging1", "BI_packaging2", "BI_packaging3", 
-                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3", 
+                  "BI_organic1", "BI_organic2", "BI_organic3",
+                  "BI_packaging1", "BI_packaging2", "BI_packaging3",
+                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3",
                   "",  "right","","","pleasant","","","must","",
                   rows = 3)
 p <- graph_sem(model = fit1corr, layout = lay)
 if (!file.exists("figures/CFA1graphicalcorrBI.png")) {
-  ggsave("figures/CFA1graphicalcorrBI.png", p, 
+  ggsave("figures/CFA1graphicalcorrBI.png", p,
          device = "png", width = 11, height = 5)
   }
-knitr::include_graphics(find_root_file("figures/CFA1graphicalcorrBI.png", 
+knitr::include_graphics(find_root_file("figures/CFA1graphicalcorrBI.png",
     criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 ```
