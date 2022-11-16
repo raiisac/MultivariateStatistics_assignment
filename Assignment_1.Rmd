@@ -681,8 +681,6 @@ Since an anova test for the two SEMs has a p-value of `r round(anovasemp,3)`, we
 
 # Task 2
 
-Benefits.Rdata is loaded from our terminal locally.
-
 ```{r load2, include=FALSE, message=FALSE, warning=FALSE}
 load(find_root_file("data/benefits.Rdata", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
@@ -690,7 +688,7 @@ load(find_root_file("data/benefits.Rdata",
 
 ## Canonical correlation analysis
 
-We then preprocess the benefits data for the canonical correlation analysis. A summary of the analysis is presented and redundancies are further computed.  
+After standardizing both X and Y variables with zero mean and unit variance, we proceed with inspecting the squared canonical correlations. We can see that the first canonical variate u1 (based on a linear combination of X variables) accounts for 23.4% of the variance in the canonical variate t1 (based on a linear combination of Y variables). The canonical variate u2 accounts for 5.2% of the variance in the canonical variate t2, etc. 
 
 ```{r cca, include=TRUE, message=FALSE, warning=FALSE}
 zbenefits <- benefits
@@ -717,10 +715,13 @@ round(cancor.out$structure$X.xscores, 2)
 round(cancor.out$structure$Y.yscores, 2)
 ```
 
-From the canonical correlation analysis results, we can conclude that there are 4 pairs of canonical variates. However, according to the results of the hypotheses tests, we can observe that the fourth pair is not significant as the H0 cannot be rejected at he 5% significant level which the Pr(> F) is 0.1735. 
+To investigate the amount of variance in Y that is accounted for by X, we compute the redundancies from the output. We can see from below that u1, which is the first pair of canonical variates, accounts for 8.9% of the variance in the Y variables, and the second and the third pair of canonical variates accounts for an additional 2.2% and 0.7% of the variance in the Y variables. As the additional variance accounted for by the forth canonical variate is negligible, we can say that the total amount of variance in Y that can be accounted for by X is 11.8%. As the additional variance accounted for by the last canonical variates u4 is rather small (0.0004), this suggests that not all pairs of canonical variates are significant. We can use Wilk’s Lambda for a formal test.
 
-Also the canonical correlation analysis results, we can observe that the first pair contributes 48.3% of the variance of the canonical variate which its canonical correlation is 0.233. In the meantime, the second one contributes 22.8% which its canonical correlation is 0.052 while the third one contributes 13.7% which its canonical correlation is 0.137.
-From the variance results, the three pairs contribute 11.78% in terms of variance for Y variables. 
+The p-value of 0.1735 suggests that there is not enough evidence to reject the null hypothesis: p( u4,  t4) = 0. Therefore, the last canonical correlation is zero. As the other p-values are very small, we reach the same conclusion that the first three pairs of canonical correlations are significant. In particular, the canonical correlation of the first pair (r = 48.3%) and the second pair (r = 22.8%) are stronger while the canonical correlation of the third pair (r = 13.7%) is weaker, therefore we focus on the first two pairs for interpretation.
+
+To interpret canonical variates, we look at the canonical loadings, which summarizes the correlations between the canonical variates and the respective original variables. We can observe that the first covariate u1 is strongly negatively correlated with X variables (e.g.SB_make_lazy, unemployed_notmotivated) suggesting that the unemployed are too lazy to find jobs. The first covariate t1 is strongly positively correlated with SL_unemp_gvntresp which reflects the standard living for the employed. Not surprising, having high standard of living when unemployed is likely associated with more laziness to find jobs. 
+
+The second covariate u2 is strongly negatively correlated with the X variable SB_often_lessthanentitled, which indicates many with very low incomes get less benefit than legally entitled to. The second covariate t2 is strongly positively correlated with the Y variable SL_pensioners which reflects the standard living for the pensioners, and is strongly negatively assoicated with the Y variable SL_old_gvntresp which reflects the standard of living for the old.  
 
 ## Split-half approach
 
