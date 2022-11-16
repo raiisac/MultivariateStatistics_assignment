@@ -28,6 +28,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Task 1
 
+All R scripts and the data can be found on [this GitHub repository](https://github.com/raiisac/MultivariateStatistics_assignment).
 ```{r load, include=FALSE, message=FALSE, warning=FALSE}
 load(find_root_file("data/cosmetics.Rdata", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
