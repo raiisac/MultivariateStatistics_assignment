@@ -1,0 +1,110 @@
+---
+documentclass: article
+fontsize: 10pt
+date: "`r Sys.Date()`"
+output: 
+  bookdown::pdf_document2: 
+    fig_caption: yes
+    toc: false
+    latex_engine: xelatex
+    includes:
+      in_header: preamble.sty
+      before_body: titlepage.sty
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+
+update.packages("rlang")
+library(xfun)
+library(tidyverse)
+library(rprojroot)
+library(kableExtra)
+library(ISLR2)
+library(smacof) 
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Task 1
+
+All R scripts and the data can be found on [this GitHub repository](https://github.com/raiisac/MultivariateStatistics_assignment).
+```{r load, include=FALSE, message=FALSE, warning=FALSE}
+data(College)
+```
+
+
+# Task 2
+
+```{r load2, include=FALSE, message=FALSE, warning=FALSE}
+load(find_root_file("data/fashion.Rdata", 
+     criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+train.data <- train_data %>% scale(center = TRUE, scale = FALSE)
+```
+
+# Task 3
+```{r load3, include=FALSE, message=FALSE, warning=FALSE}
+data(rectangles)
+data(rect_constr) 
+```
+
+# Appendix
+```{r CFA1graphical, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "A_organic1", "A_organic2", "A_organic3",
+                  "A_packaging1", "A_packaging2", "A_packaging3",
+                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3",
+                  rows = 2)
+p <- graph_sem(model = fit1a, layout = lay)
+if (!file.exists("figures/CFA1graphical.png")) {
+  ggsave("figures/CFA1graphical.png", p,
+         device = "png", width = 11, height = 4)}
+knitr::include_graphics(find_root_file("figures/CFA1graphical.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+```{r CFA1graphicalcorr, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the model for the attitudeswith correlated error terms for all pairs of items that focus on the same aspect.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "A_organic1", "A_organic2", "A_organic3",
+                  "A_packaging1", "A_packaging2", "A_packaging3",
+                  "A_crueltyfree1", "A_crueltyfree2", "A_crueltyfree3",
+                  "",  "right","","","pleasant","","","must","",
+                  rows = 3)
+p <- graph_sem(model = fit1acorr, layout = lay)
+if (!file.exists("figures/CFA1graphicalcorr.png")) {
+  ggsave("figures/CFA1graphicalcorr.png", p,
+         device = "png", width = 11, height = 5)
+  }
+knitr::include_graphics(find_root_file("figures/CFA1graphicalcorr.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+
+```{r CFA1graphicalBI, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the behavior-intent items.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "BI_organic1", "BI_organic2", "BI_organic3",
+                  "BI_packaging1", "BI_packaging2", "BI_packaging3",
+                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3",
+                  rows = 2)
+p <- graph_sem(model = fit1, layout = lay)
+if (!file.exists("figures/CFA1graphical_BI.png")) {
+  ggsave(find_root_file("figures/CFA1graphical_BI.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")), p,
+         device = "png", width = 11, height = 4)}
+knitr::include_graphics(find_root_file("figures/CFA1graphical_BI.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
+
+```{r CFA1graphicalcorrBI, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the model with correlated error terms for the behavior-intent items that focus on the same aspect.", out.width = "15cm", fig.align='center'}
+lay <- get_layout("", "", "organic","","packaging","","crueltyfree","", "",
+                  "BI_organic1", "BI_organic2", "BI_organic3",
+                  "BI_packaging1", "BI_packaging2", "BI_packaging3",
+                  "BI_crueltyfree1", "BI_crueltyfree2", "BI_crueltyfree3",
+                  "",  "right","","","pleasant","","","must","",
+                  rows = 3)
+p <- graph_sem(model = fit1corr, layout = lay)
+if (!file.exists("figures/CFA1graphicalcorrBI.png")) {
+  ggsave("figures/CFA1graphicalcorrBI.png", p,
+         device = "png", width = 11, height = 5)
+  }
+knitr::include_graphics(find_root_file("figures/CFA1graphicalcorrBI.png",
+    criterion = has_file("MultivariateStatistics_assignment.Rproj")))
+```
