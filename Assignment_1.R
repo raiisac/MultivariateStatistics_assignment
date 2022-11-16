@@ -1,4 +1,4 @@
-## ----setup, include=FALSE, message=FALSE, warning=FALSE-------------------------------------------
+## ----setup, include=FALSE, message=FALSE, warning=FALSE----------------------------------------------------------------
 
 update.packages("rlang")
 library(xfun)
@@ -12,7 +12,7 @@ library(gtools)
 knitr::opts_chunk$set(echo = TRUE)
 
 
-## ----load, include=FALSE, message=FALSE, warning=FALSE--------------------------------------------
+## ----load, include=FALSE, message=FALSE, warning=FALSE-----------------------------------------------------------------
 load(find_root_file("data/cosmetics.Rdata", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 colnames(cosmetics) <- str_replace(colnames(cosmetics), 
@@ -20,7 +20,7 @@ colnames(cosmetics) <- str_replace(colnames(cosmetics),
                                    "A_") #shorten the names of the variables
 
 
-## ----CFA1, include=TRUE, message=FALSE, warning=FALSE---------------------------------------------
+## ----CFA1, include=TRUE, message=FALSE, warning=FALSE------------------------------------------------------------------
 #We first standardize the variables
 cosmetics_std <- scale(cosmetics, center = TRUE, scale = FALSE)
 covmat1 <- cov(cosmetics_std[,1:9])
@@ -39,7 +39,7 @@ sum_fit1 <- summary(fit1, fit.measure = T)
 sum_fit1_std <- standardizedSolution(fit1)
 
 
-## ----CFA1performance, echo=FALSE, message=FALSE, warning=FALSE------------------------------------
+## ----CFA1performance, echo=FALSE, message=FALSE, warning=FALSE---------------------------------------------------------
 data.frame(
   parameter = c('user model Chisq. (df)',
                 "baseline model Chisq. (df)",
@@ -63,7 +63,7 @@ data.frame(
 
 
 
-## ----CFA1standardized, echo=FALSE, message=FALSE, warning=FALSE-----------------------------------
+## ----CFA1standardized, echo=FALSE, message=FALSE, warning=FALSE--------------------------------------------------------
 t1 <- sum_fit1_std[1:9,] %>%
   mutate(std_loading = sprintf("%s %s %s", lhs, op, rhs),
          stars = stars.pval(pvalue),
@@ -109,19 +109,18 @@ knitr::kable(
 fit1a <- fit1
 
 
-## ----CFA1corr, include=TRUE, message=FALSE, warning=FALSE-----------------------------------------
+## ----CFA1corr, include=TRUE, message=FALSE, warning=FALSE--------------------------------------------------------------
 corrmodel1 <- 
 'organic = ~1*A_organic1 + A_organic2 + A_organic3
   packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
   crueltyfree = ~1*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  
   A_organic1 ~~c*A_packaging1 
   A_organic1 ~~c*A_crueltyfree1
   A_packaging1 ~~c*A_crueltyfree1
-  
   A_organic2 ~~d*A_packaging2 
   A_organic2 ~~d*A_crueltyfree2
   A_packaging2 ~~d*A_crueltyfree2
-  
   A_organic3 ~~e*A_packaging3 
   A_organic3 ~~e*A_crueltyfree3
   A_packaging3 ~~e*A_crueltyfree3
@@ -129,7 +128,6 @@ corrmodel1 <-
   organic ~~ organic
   packaging ~~ packaging
   crueltyfree ~~ crueltyfree
-  
   organic ~~ packaging
   organic ~~ crueltyfree
   packaging ~~ crueltyfree
@@ -139,7 +137,7 @@ sum_fit1corr <- summary(fit1corr, fit.measure = T)
 sum_fit1_std_corr <- standardizedSolution(fit1corr)
 
 
-## ----CFA1performancecorr, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE---------------
+## ----CFA1performancecorr, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE------------------------------------
 data.frame(
   parameter = c('user model Chisq. (df)',
                 "baseline model Chisq. (df)",
@@ -163,7 +161,7 @@ data.frame(
 
 
 
-## ----CFA1standardizedcorr, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE--------------
+## ----CFA1standardizedcorr, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE-----------------------------------
 t1 <- sum_fit1_std_corr[1:9,] %>%
   mutate(loading = sprintf("%s %s %s", lhs, op, rhs),
          stars = stars.pval(pvalue),
@@ -200,7 +198,7 @@ knitr::kable(
 fit1acorr <- fit1corr
 
 
-## ----CFA1LRtest, echo=FALSE, message=FALSE, warning=FALSE-----------------------------------------
+## ----CFA1LRtest, echo=FALSE, message=FALSE, warning=FALSE--------------------------------------------------------------
 #Anova test
 test <- anova(fit1corr, fit1)
 anovap <-  ifelse(test$`Pr(>Chisq)`[2]<0.001,"$<0.001$",ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.01$", ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.05$","$>0.05$")))
@@ -239,7 +237,7 @@ sum_fit1corr_new <- summary(fit1corr_new, fit.measure = T)
 sum_fit1_std_corr_new <- standardizedSolution(fit1corr_new)
 
 
-## ----CFA1BI, include=TRUE, message=FALSE, warning=FALSE-------------------------------------------
+## ----CFA1BI, include=TRUE, message=FALSE, warning=FALSE----------------------------------------------------------------
 #We first standardize the variables
 covmat1 <- cov(cosmetics_std[,10:18])
 simplemodel1 <- 
@@ -257,7 +255,7 @@ sum_fit1 <- summary(fit1, fit.measure = T)
 sum_fit1_std <- standardizedSolution(fit1)
 
 
-## ----CFA1performanceBI, echo=FALSE, message=FALSE, warning=FALSE----------------------------------
+## ----CFA1performanceBI, echo=FALSE, message=FALSE, warning=FALSE-------------------------------------------------------
 data.frame(
   parameter = c('user model Chisq. (df)',
                 "baseline model Chisq. (df)",
@@ -281,7 +279,7 @@ data.frame(
 
 
 
-## ----CFA1standardizedBI, echo=FALSE, message=FALSE, warning=FALSE---------------------------------
+## ----CFA1standardizedBI, echo=FALSE, message=FALSE, warning=FALSE------------------------------------------------------
 t1 <- sum_fit1_std[1:9,] %>%
   mutate(std_loading = sprintf("%s %s %s", lhs, op, rhs),
          stars = stars.pval(pvalue),
@@ -318,7 +316,7 @@ knitr::kable(
 )
 
 
-## ----CFA1corrBI, include=TRUE, message=FALSE, warning=FALSE---------------------------------------
+## ----CFA1corrBI, include=TRUE, message=FALSE, warning=FALSE------------------------------------------------------------
 corrmodel1 <- 
 'organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
@@ -346,7 +344,7 @@ sum_fit1corr <- summary(fit1corr, fit.measure = T)
 sum_fit1_std_corr <- standardizedSolution(fit1corr)
 
 
-## ----CFA1performancecorrBI, echo=FALSE, message=FALSE, warning=FALSE------------------------------
+## ----CFA1performancecorrBI, echo=FALSE, message=FALSE, warning=FALSE---------------------------------------------------
 data.frame(
   parameter = c('user model Chisq. (df)',
                 "baseline model Chisq. (df)",
@@ -382,7 +380,7 @@ data.frame(
 
 
 
-## ----CFA1standardizedcorrBI, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE------------
+## ----CFA1standardizedcorrBI, echo=FALSE, message=FALSE, warning=FALSE, include = FALSE---------------------------------
 t1 <- sum_fit1_std_corr[1:9,] %>%
   mutate(loading = sprintf("%s %s %s", lhs, op, rhs),
          stars = stars.pval(pvalue),
@@ -419,7 +417,7 @@ knitr::kable(
 )
 
 
-## ----CFA1LRtestBI, echo=FALSE, message=FALSE, warning=FALSE---------------------------------------
+## ----CFA1LRtestBI, echo=FALSE, message=FALSE, warning=FALSE------------------------------------------------------------
 test <- anova(fit1corr, fit1)
 anovap <-  ifelse(test$`Pr(>Chisq)`[2]<0.001,"$<0.001$",ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.01$", ifelse(test$`Pr(>Chisq)`[2]<0.01,"$<0.05$","$>0.05$")))
 cor_table <- residuals(fit1corr, type = "cor")$cov
@@ -433,7 +431,7 @@ cor_table_simple <- residuals(fit1corr, type = "cor")$cov
 n_simple <- sum(ifelse(abs(cor_table)>0.05,1,0))/2
 
 
-## ----SEM, echo=TRUE, message=FALSE, warning=FALSE-------------------------------------------------
+## ----SEM, echo=TRUE, message=FALSE, warning=FALSE----------------------------------------------------------------------
 cormat <- cov(cosmetics_std)
 sem1 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   BI_packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
@@ -483,7 +481,7 @@ sum_sem1 <- summary(fitsem1)
 sum_sem1_std <- standardizedSolution(fitsem1)
 
 
-## ----SEM2, echo=FALSE, message=FALSE, warning=FALSE-----------------------------------------------
+## ----SEM2, echo=FALSE, message=FALSE, warning=FALSE--------------------------------------------------------------------
 #summary SEM results
 sum_sem1$pe[49:51,] %>% 
   mutate (Regression_coefficient = sprintf("%s%s\n%s",lhs, op, rhs),
@@ -500,14 +498,14 @@ sum_sem1_std[49:51,] %>%
   dplyr::select(Regression_coefficient, sem1_std) -> sem1regression_std
 
 
-## ----echo=T, results='hide'-----------------------------------------------------------------------
+## ----echo=T, results='hide'--------------------------------------------------------------------------------------------
 '  #structural model
   BI_organic ~p*A_organic
   BI_packaging ~p*A_packaging
   BI_crueltyfree ~p*A_crueltyfree'
 
 
-## ----SEM2_1, echo=FALSE, message=FALSE, warning=FALSE---------------------------------------------
+## ----SEM2_1, echo=FALSE, message=FALSE, warning=FALSE------------------------------------------------------------------
 sem2 <- 'BI_organic = ~1*BI_organic1 + BI_organic2 + BI_organic3
   BI_packaging = ~1*BI_packaging1 + BI_packaging2 + BI_packaging3
   BI_crueltyfree = ~1*BI_crueltyfree1 + BI_crueltyfree2 + BI_crueltyfree3
@@ -560,7 +558,7 @@ sum_sem2_std <- standardizedSolution(fitsem2)
 anovasem <- anova(fitsem1,fitsem2)
 anovasemp <- anovasem$`Pr(>Chisq)`[2]
 
-## ----SEMregression, echo=FALSE, message=FALSE, warning=FALSE--------------------------------------
+## ----SEMregression, echo=FALSE, message=FALSE, warning=FALSE-----------------------------------------------------------
 sum_sem2$pe[49:51,] %>% 
   mutate (Regression_coefficient = sprintf("%s%s\n%s",lhs, op, rhs),
           stars = stars.pval(pvalue),
@@ -587,12 +585,12 @@ sum_sem2_std[49:51,] %>%
   
 
 
-## ----load2, include=FALSE, message=FALSE, warning=FALSE-------------------------------------------
+## ----load2, include=FALSE, message=FALSE, warning=FALSE----------------------------------------------------------------
 load(find_root_file("data/benefits.Rdata", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 
 
-## ----cca, include=TRUE, message=FALSE, warning=FALSE----------------------------------------------
+## ----cca, include=TRUE, message=FALSE, warning=FALSE-------------------------------------------------------------------
 zbenefits <- benefits
 zbenefits[, 2:14] <- scale(zbenefits[, 2:14], scale = TRUE, center = TRUE) 
 
@@ -617,7 +615,7 @@ round(cancor.out$structure$X.xscores, 2)
 round(cancor.out$structure$Y.yscores, 2)
 
 
-## ----spa, include=TRUE, message=FALSE, warning=FALSE----------------------------------------------
+## ----spa, include=TRUE, message=FALSE, warning=FALSE-------------------------------------------------------------------
 train <- benefits[seq(2,3310, by = 2), ]
 valid <- benefits[seq(1,3310, by = 2), ]
 train[,2:14] <- scale(train[, 2:14], center = TRUE, scale = TRUE)
