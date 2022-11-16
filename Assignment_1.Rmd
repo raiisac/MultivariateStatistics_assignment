@@ -763,8 +763,11 @@ round(cor(train.Y2,train.Y2),3)
 round(cor(train.X2,train.X2),3)
 ```
 
-We then utilized the split-half approach for conducting canonical correlation analysis on both validation and training dataset to examine the validity of the results. From the reliability of the canonical variates for Y and X variables, we can observe that the Xcan1 and Ycan1 contributes 0.482 and 0.468 in the comparisons of the elements which are considered reliable compared to their counterparts. The off-diagonal elements are close to 0 which is considered as normal because the canonical variates compared are based on different datasets so there should be very less correlations. 
+The first 2 pairs of canonical variates have very good reliabilities R(t1, t1*= |-0.985|  and R(u1, u1*)= |-0.985| for the first pair and R(t2, t2*)= |-0.989| and R(u2, u2*)= |-0.893| for the second pair). The reliability for R(u3, u3*)= |-0.557| and R(u4, u4*)= 0.257 are relatively low. The off-diagonal elements of RT, T* and RU, U* are rather low and lower than the diagonal elements.
 
+When comparing the diagonal elements of R(U, T) and R(U*,T*), we see that the first two canonical correlations are stable, as 0.482 is almost equal to 0.468, and 0.244 is almost equal to 0.215. In particular, the first one is stabler than the second. In comparison, the last two pairs of canonical correlations are much less stable. 
+
+The off-diagonal elements of R(T*, T*) and R(U*, U*) are close to 0, which means that the canonical variates estimated on the validation data are uncorrelated. In summary, the validation of the CCA using the split-half approach shows that only the first 2 pairs of canonical variates are reliable. Connecting this with the result from part (a), we can conclude that the first 2 pairs of canonical variates are both important and reliable.
 
 # Appendix
 ```{r CFA1graphical, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
