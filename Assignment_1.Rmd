@@ -42,7 +42,7 @@ There are `r sum(str_detect(colnames(cosmetics),"A_"))` attitude items that are 
 
 ### A simple 3-factor model
 
-We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated. The factor loading of the first indicator of each latent variable is fixed to 1. and this will help to identify the model. The first columns in Table \@ref(tab:CFA1performancecorrBI) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). However, as this test is sensitive to sample size. As the number of observations is large, there is a high statistical power to reject the null hypothesis. As an alternative, we can look into the descriptive fit measures. The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. On the other hand, composite reliability measures the reliability of the factor scores. We can see that the composite reliability values are high (Table \@ref(tab:CFA1standardized)), therefore, the factors are measured in a reliable way. Figure \@ref(fig:CFA1graphical) in the appendix shows a graphical representation of the model, including all loadings, correlations and variances.
+We first conduct a simple confirmatory factor analysis, assuming each item only has a loading on the concept it aims to measure (organic, packaging, and cruelty free). We will assume the the three latent variables are correlated. The factor loading of the first indicator of each latent variable is fixed to 1, which will help to identify the model. The first columns in Table \@ref(tab:CFA1performancecorrBI) shows several performance measures for the model. It shows that the currently proposed 3-factor model is not a good fit. The chi-squared goodness of fit tests indicate that the constraints imposed by the model are not supported ($p<0.001$). However, as the number of observations is large, there is a high statistical power to reject the null hypothesis. As an alternative, we can look into the descriptive fit measures. The cutoff for a good model for CFI and TLI (cutoff $>0.95$) and for RMSEA and SRMR (cutoff $<0.08$) are also not satisfied. On the other hand, composite reliability measures the reliability of the factor scores. We can see that the composite reliability values are high (Table \@ref(tab:CFA1standardized)), therefore, the factors are measured in a reliable way. Figure \@ref(fig:CFA1graphical) in the appendix shows a graphical representation of the model, including all loadings, correlations and variances.
 
 In the standardized solution, the standardized loadings represent correlations between a variable and a factor (Table \@ref(tab:CFA1standardized)). All standardized loadings are above 0.7. Therefore, the squared loadings are higher than 0.5. This reflects a sufficient reliability of the indicator variables. As these correlations are lower than 1, discriminant validity has been satisfied. Since all the standardized loadings are positive and significant, there is convergent validity. In addition, the composite reliability measures the reliability of the factor scores. We can see that the composite reliability values (organic = 0.817, packaging = 0.855, crueltyfree = 0.892) are high, therefore, the factors are measured in a reliable way.
 
@@ -148,14 +148,13 @@ corrmodel1 <-
 'organic = ~1*A_organic1 + A_organic2 + A_organic3
   packaging = ~1*A_packaging1 + A_packaging2 + A_packaging3
   crueltyfree = ~1*A_crueltyfree1 + A_crueltyfree2 + A_crueltyfree3
+  
   A_organic1 ~~c*A_packaging1 
   A_organic1 ~~c*A_crueltyfree1
   A_packaging1 ~~c*A_crueltyfree1
-  
   A_organic2 ~~d*A_packaging2 
   A_organic2 ~~d*A_crueltyfree2
   A_packaging2 ~~d*A_crueltyfree2
-  
   A_organic3 ~~e*A_packaging3 
   A_organic3 ~~e*A_crueltyfree3
   A_packaging3 ~~e*A_crueltyfree3
@@ -163,7 +162,6 @@ corrmodel1 <-
   organic ~~ organic
   packaging ~~ packaging
   crueltyfree ~~ crueltyfree
-  
   organic ~~ packaging
   organic ~~ crueltyfree
   packaging ~~ crueltyfree
@@ -283,11 +281,11 @@ attitude items that focus on the same aspect and notice that `r n` (`r round(n/(
 ## CFA to construct a measurement model for the Behavior-Intention items
 
 There are `r sum(str_detect(colnames(cosmetics),"BI"))` behavior-intention items that are scored on a five-point Likert scale. 
-As with the attitude items, we we fit a CFA on the covariance matrix of the centered dataset. 
+As with the attitude items, we fit a CFA on the covariance matrix of the centered dataset. 
 
 ### A simple 3-factor model
 
-Table \@ref(tab:CFA1performancecorrBI) shows, in the third column) that all performance metrics, except for SRMSR, indicate that this simple model does not fit the data well. Nevertheless, composite reliability (Table \@ref(tab:CFA1standardizedBI)) is high for all three latent variables.
+Table \@ref(tab:CFA1performancecorrBI) shows, in the third column, that all performance metrics, except for SRMSR, indicate that this simple model does not fit the data well. Nevertheless, composite reliability (Table \@ref(tab:CFA1standardizedBI)) is high for all three latent variables.
 
 ```{r CFA1BI, include=TRUE, message=FALSE, warning=FALSE}
 #We first standardize the variables
@@ -371,7 +369,7 @@ knitr::kable(
 
 ### A 3-factor model with correlated error terms
 
-Since the simple 3-factor model does not seem to perform well, we alter the model by including correlated error terms for all pairs of items that focus on the same aspect. We also impose equal residual residual correlations for all pairs of items that focus on the same aspect.
+Since the simple 3-factor model does not seem to perform well, we alter the model by including correlated error terms for all pairs of items that focus on the same aspect. We also impose equal residual correlations for all pairs of items that focus on the same aspect.
 
 ```{r CFA1corrBI, include=TRUE, message=FALSE, warning=FALSE}
 corrmodel1 <- 
@@ -493,7 +491,7 @@ n_simple <- sum(ifelse(abs(cor_table)>0.05,1,0))/2
 ```
 An anova test between the two models shows that the model with correlated error terms for all pairs of Behavior-Intention items that focus on the same aspect is significantly better (p-value `r anovap`). 
 
-The performance measures (column 3 and 4 in Table \@ref(tab:CFA1performancecorrBI)) show a good fit and all residual correlations are between -0.05 and 0.05 (the simpler model had `r n_simple` (`r round(n/(9*8/2)*100,2)`%) residual correlations between -0.05 and 0.05). We shall thus keep this model as the final model.
+The performance measures (column 4 in Table \@ref(tab:CFA1performancecorrBI)) show a good fit and all residual correlations are between -0.05 and 0.05 (the simpler model had `r n_simple` (`r round(n/(9*8/2)*100,2)`%) residual correlations between -0.05 and 0.05). We shall thus keep this model as the final model.
 
 ## Structural equation model to evaluate the impact of attitude on behavior intention
 
@@ -574,9 +572,9 @@ sum_sem1_std[49:51,] %>%
 ```
 The structural equation model shows that all correlations between latent variables are positive and highly significant. The unstandardized and standardized regression coefficients are shown in respectively the first and second column of Table \@ref(tab:SEMregression).
 
-- an increase of one unit in attitude_organic increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
-- an increase of one unit in attitude_packaging increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_packaging", rhs == "A_packaging") %>% pull(est.std),3)`.
-- an increase of one unit in attitude_crueltyfree increases the behavior intention with `r round(sum_sem1_std %>% filter(lhs=="BI_crueltyfree", rhs == "A_crueltyfree") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_organic increases the behavior intention to buy organic products with `r round(sum_sem1_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_packaging increases the behavior intention to buy packaging free with `r round(sum_sem1_std %>% filter(lhs=="BI_packaging", rhs == "A_packaging") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_crueltyfree increases the behavior intention to buy cruelty free with `r round(sum_sem1_std %>% filter(lhs=="BI_crueltyfree", rhs == "A_crueltyfree") %>% pull(est.std),3)`.
 
 These population regression coefficients are quite similar so we next test a model that imposes that all three regression coefficients are the same.
 
@@ -675,9 +673,9 @@ With a test statistics of `r round(sum_sem2$test$standard$stat, 2)` with `r sum_
 Since an anova test for the two SEMs has a p-value of `r round(anovasemp,3)`, we cannot reject the null hypothesis that the models are the same. Nevertheless, the chi-square test was slightly better so we prefer this simpler model with equal population regression coefficients of the structural model. The unstandardized and standardized regression coefficients are shown in respectively the third and fourth column of Table \@ref(tab:SEMregression).
 
 
-- an increase of one unit in attitude_organic increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
-- an increase of one unit in attitude_packaging increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_packaging", rhs == "A_packaging") %>% pull(est.std),3)`.
-- an increase of one unit in attitude_crueltyfree increases the behavior intention with `r round(sum_sem2_std %>% filter(lhs=="BI_crueltyfree", rhs == "A_crueltyfree") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_organic increases the behavior intention to buy organic with `r round(sum_sem2_std %>% filter(lhs=="BI_organic", rhs == "A_organic") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_packaging increases the behavior intention to buy packaging free with `r round(sum_sem2_std %>% filter(lhs=="BI_packaging", rhs == "A_packaging") %>% pull(est.std),3)`.
+- an increase of one unit in attitude_crueltyfree increases the behavior intention to buy cruelty free with `r round(sum_sem2_std %>% filter(lhs=="BI_crueltyfree", rhs == "A_crueltyfree") %>% pull(est.std),3)`.
 
 # Task 2
 
@@ -715,7 +713,7 @@ round(cancor.out$structure$X.xscores, 2)
 round(cancor.out$structure$Y.yscores, 2)
 ```
 
-To investigate the amount of variance in Y that is accounted for by X, we compute the redundancies from the output. We can see from below that u1, which is the first pair of canonical variates, accounts for 8.9% of the variance in the Y variables, and the second and the third pair of canonical variates accounts for an additional 2.2% and 0.7% of the variance in the Y variables. As the additional variance accounted for by the forth canonical variate is negligible, we can say that the total amount of variance in Y that can be accounted for by X is 11.8%. As the additional variance accounted for by the last canonical variates u4 is rather small (0.0004), this suggests that not all pairs of canonical variates are significant. We can use Wilk’s Lambda for a formal test.
+To investigate the amount of variance in Y that is accounted for by X, we compute the redundancies from the output. We can see that u1, which is the first pair of canonical variates, accounts for 8.9% of the variance in the Y variables, and the second and the third pair of canonical variates accounts for an additional 2.2% and 0.7% of the variance in the Y variables. As the additional variance accounted for by the fourth canonical variate is negligible, we can say that the total amount of variance in Y that can be accounted for by X is 11.8%. As the additional variance accounted for by the last canonical variates u4 is rather small (0.0004), this suggests that not all pairs of canonical variates are significant. We can use Wilk’s Lambda for a formal test.
 
 The p-value of 0.1735 suggests that there is not enough evidence to reject the null hypothesis: p( u4,  t4) = 0. Therefore, the last canonical correlation is zero. As the other p-values are very small, we reach the same conclusion that the first three pairs of canonical correlations are significant. In particular, the canonical correlation of the first pair (r = 48.3%) and the second pair (r = 22.8%) are stronger while the canonical correlation of the third pair (r = 13.7%) is weaker, therefore we focus on the first two pairs for interpretation.
 
@@ -762,11 +760,11 @@ round(cor(train.Y2,train.Y2),3)
 round(cor(train.X2,train.X2),3)
 ```
 
-The first 2 pairs of canonical variates have very good reliabilities R(t1, t1*= |-0.985|  and R(u1, u1*)= |-0.985| for the first pair and R(t2, t2*)= |-0.989| and R(u2, u2*)= |-0.893| for the second pair). The reliability for R(u3, u3*)= |-0.557| and R(u4, u4*)= 0.257 are relatively low. The off-diagonal elements of RT, T* and RU, U* are rather low and lower than the diagonal elements.
+The first 2 pairs of canonical variates have very good reliabilities (R(t1, t1\*) = |-0.985|  and R(u1, u1\*) = |-0.985| for the first pair and R(t2, t2\*) = |-0.989| and R(u2, u2\*) = |-0.893| for the second pair). The reliability for R(u3, u3\*) = |-0.557| and R(u4, u4\*)= 0.257 are relatively low. The off-diagonal elements of RT, T* and RU, U* are rather low and lower than the diagonal elements.
 
-When comparing the diagonal elements of R(U, T) and R(U*,T*), we see that the first two canonical correlations are stable, as 0.482 is almost equal to 0.468, and 0.244 is almost equal to 0.215. In particular, the first one is stabler than the second. In comparison, the last two pairs of canonical correlations are much less stable. 
+When comparing the diagonal elements of R(U, T) and R(U\*,T\*), we see that the first two canonical correlations are stable, as 0.482 is almost equal to 0.468, and 0.244 is almost equal to 0.215. In particular, the first one is more stable than the second. In comparison, the last two pairs of canonical correlations are much less stable. 
 
-The off-diagonal elements of R(T*, T*) and R(U*, U*) are close to 0, which means that the canonical variates estimated on the validation data are uncorrelated. In summary, the validation of the CCA using the split-half approach shows that only the first 2 pairs of canonical variates are reliable. Connecting this with the result from part (a), we can conclude that the first 2 pairs of canonical variates are both important and reliable.
+The off-diagonal elements of R(T\*, T\*) and R(U\*, U\*) are close to 0, which means that the canonical variates estimated on the validation data are uncorrelated. In summary, the validation of the CCA using the split-half approach shows that only the first 2 pairs of canonical variates are reliable. Connecting this with the result from part (a), we can conclude that the first 2 pairs of canonical variates are both important and reliable.
 
 # Appendix
 ```{r CFA1graphical, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A graphical representation of the simple model for the attitudes.", out.width = "15cm", fig.align='center'}
