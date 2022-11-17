@@ -37,6 +37,51 @@ All R scripts and the data can be found on [this GitHub repository](https://gith
 data(College)
 ```
 
+The data consists of `r ncol(College)` variables of which the categorical variable *Private* denotes whether the school is private (*Private == Yes*) or not (*Private == No*). There are `r nrow(College)` schools in the data; `r sum(College$Private == "Yes")` (`r round(sum(College$Private == "Yes")/nrow(College)*100,2)`%) private schools and `r sum(College$Private == "No")` (`r round(sum(College$Private == "No")/nrow(College)*100,2)`%) non-private schools.
+```{r classification, include=FALSE, message=FALSE, warning=FALSE}
+College_logtranfskewed <- College %>%
+  mutate(Apps = log(Apps),
+         Accept = log(Accept),
+         Enroll = log(Enroll),
+         Top10perc = log(Top10perc),
+         F.Undergrad = log(F.Undergrad),
+         P.Undergrad = log(P.Undergrad),
+         Books = log(Books),
+         Personal = log(Personal),
+         Expend = log(Expend))
+College_centered <- College %>% 
+  dplyr::select(-Private) %>% 
+  scale(center = TRUE, scale = FALSE) %>%
+  as.data.frame() %>%
+  mutate(Private = College$Private)
+College_logtranfskewed_centered <- College_logtranfskewed %>% 
+  dplyr::select(-Private) %>%  
+  scale(center = TRUE, scale = FALSE) %>%
+  as.data.frame() %>%
+  mutate(Private = College$Private)
+College_std <- College %>% 
+  dplyr::select(-Private) %>%  
+  scale(center = TRUE, scale = TRUE) %>%
+  as.data.frame() %>%
+  mutate(Private = College$Private)
+College_logtranfskewed_centered <- College_logtranfskewed %>% 
+  dplyr::select(-Private) %>%  
+  scale(center = TRUE, scale = TRUE) %>%
+  as.data.frame() %>%
+  mutate(Private = College$Private)
+
+#LDA
+
+#QDA
+
+#bagging
+
+#random forsts
+
+#KNN
+
+```
+
 
 # Task 2
 
