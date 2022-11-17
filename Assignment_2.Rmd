@@ -19,6 +19,8 @@ library(xfun)
 library(tidyverse)
 library(rprojroot)
 library(kableExtra)
+library(MASS)#lda function
+library(biotools)
 library(ISLR2)
 # this package does not work for the newest version of R --> 
 # only load if the local data files are not there
@@ -35,9 +37,38 @@ knitr::opts_chunk$set(echo = TRUE)
 All R scripts and the data can be found on [this GitHub repository](https://github.com/raiisac/MultivariateStatistics_assignment).
 ```{r load, include=FALSE, message=FALSE, warning=FALSE}
 data(College)
+
+#test the difference between centroids
+Wilks_manova <- function(data, group = "Private"){
+  lm.out <- lm(cbind(
+    sapply(X = colnames(data)[colnames(data) != group], 
+           FUN = function(x) get(x)))~ 
+       get((group)), 
+   data = data)
+  s <- summary(manova(lm.out), test = c("Wilks"))
+  return(s$stats[1, "Pr(>F)"])#return the pvalue
+}
+
+boxM_test <- function(data, group = "Private"){
+  out <- boxM(data[,colnames(data) != group], data[,group])
+  return(out$p.value)#return the pvalue
+}
+
+lda_analysis <- function(data, group = "Private"){
+  lda.out <- lda(
+    formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
+                                     collapse = "+"))),
+    data = data)
+}
+
+LCA <- function(data, group="Private")
+
 ```
 
 The data consists of `r ncol(College)` variables of which the categorical variable *Private* denotes whether the school is private (*Private == Yes*) or not (*Private == No*). There are `r nrow(College)` schools in the data; `r sum(College$Private == "Yes")` (`r round(sum(College$Private == "Yes")/nrow(College)*100,2)`%) private schools and `r sum(College$Private == "No")` (`r round(sum(College$Private == "No")/nrow(College)*100,2)`%) non-private schools.
+
+Before we start to build models to distinguish private and non-private schools, Wilk's lambda test is performed where the null hypothesis states that the centroid (mean) in both groups is the same. Both in the log-transformed and the original (centered or standardized) data, this null hypothesis is rejected. This means that the centroids of private and non-private schools differ significantly
+
 ```{r classification, include=FALSE, message=FALSE, warning=FALSE}
 College_logtranfskewed <- College %>%
   mutate(Apps = log(Apps),
@@ -69,6 +100,14 @@ College_logtranfskewed_std <- College_logtranfskewed %>%
   scale(center = TRUE, scale = TRUE) %>%
   as.data.frame() %>%
   mutate(Private = College$Private)
+
+
+#test the difference between centroids
+Wilks_manova(data = College_logtranfskewed_centered, group = "Private")
+Wilks_manova(data = College_centered, group = "Private")
+Wilks_manova(data = College_logtranfskewed_std, group = "Private")
+Wilks_manova(data = College_std, group = "Private")
+#In each dataset, H0:mu_{yes} = mu_{no} is rejected --> centroids of Private and non-private schools differ significantly
 
 #LDA
 
