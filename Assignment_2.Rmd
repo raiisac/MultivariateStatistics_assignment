@@ -20,7 +20,13 @@ library(tidyverse)
 library(rprojroot)
 library(kableExtra)
 library(ISLR2)
-library(smacof) 
+# this package does not work for the newest version of R --> 
+# only load if the local data files are not there
+if (!file.exists(find_root_file("data/rect_constr.csv", 
+     criterion = has_file("MultivariateStatistics_assignment.Rproj")))) {
+  library(smacof)
+} 
+ 
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
