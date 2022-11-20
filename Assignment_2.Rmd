@@ -55,10 +55,42 @@ boxM_test <- function(data, group = "Private"){
 }
 
 lda_analysis <- function(data, group = "Private"){
+  K <- length(unique(levels(data[,group])))
+  positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
+  negativelevel <-  levels(data[,group])[-K]
   lda.out <- lda(
     formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
                                      collapse = "+"))),
-    data = data)
+    data = data,
+    prior = rep(1/K, K),
+    CV = TRUE)
+  tab <- table(data[,group], lda.out$class)
+  #hit rate
+  out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,])
+  )
+  return(out)
+}
+
+qda_analysis <- function(data, group = "Private"){
+  qda.out <- qda(
+    formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
+                                     collapse = "+"))),
+    data = data,
+    prior = rep(1/K, K),
+    CV = TRUE)
+  tab <- table(data[,group], qda.out$class)
+  #hit rate
+  out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,])
+  )
+  return(out)
 }
 
 knn <-  function(data, group = "Private"){
@@ -68,7 +100,10 @@ knn <-  function(data, group = "Private"){
     data = data)
 }
 
-LCA <- function(data, group="Private")
+
+confusion <-  function(true, predicted){#two vectors of the same length for the true group classification and the predicted group classification
+ #put code here to calculate hit rate, sensitivity, specificity
+}
 
 ```
 
@@ -110,25 +145,24 @@ College_logtranfskewed_std <- College_logtranfskewed %>%
   as.data.frame() %>%
   mutate(Private = College$Private)
 
+testlist <- list(center = College_centered,
+                 center_logtransfskewed = College_logtranfskewed_centered,
+                 std = College_std,
+                 std_logtransfskewed = College_logtranfskewed_std
+                 )
 
 #test the difference between centroids
-Wilks_manova(data = College_logtranfskewed_centered, group = "Private")
-Wilks_manova(data = College_centered, group = "Private")
-Wilks_manova(data = College_logtranfskewed_std, group = "Private")
-Wilks_manova(data = College_std, group = "Private")
+testlist %>% map(function(x) Wilks_manova(x,"Private"))
 #In each dataset, H0:mu_{yes} = mu_{no} is rejected --> centroids of Private and non-private schools differ significantly
 #test the difference between centroids
-boxM_test(data = College_logtranfskewed_centered, group = "Private")
-boxM_test(data = College_centered, group = "Private")
-boxM_test(data = College_logtranfskewed_std, group = "Private")
-boxM_test(data = College_std, group = "Private")
-
-
+testlist %>% map(function(x) boxM_test(x,"Private"))
 
 #LDA
-
+lda_results <- testlist %>% map(function(x) lda_analysis(x,"Private"))
+  
 #QDA
-
+qda_results <- testlist %>% map(function(x) qda_analysis(x,"Private"))
+  
 #bagging
 
 #random forsts
