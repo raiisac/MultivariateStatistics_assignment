@@ -16,12 +16,14 @@ output:
 
 update.packages("rlang")
 library(xfun)
+library(class)#for the knn.cv function
 library(tidyverse)
 library(rprojroot)
 library(kableExtra)
 library(MASS)#lda function
 library(biotools)
 library(ISLR2)
+library(patchwork)
 # this package does not work for the newest version of R --> 
 # only load if the local data files are not there
 if (!file.exists(find_root_file("data/rect_constr.csv", 
@@ -100,11 +102,44 @@ qda_analysis <- function(data, group = "Private", datatype){
   return(out)
 }
 
-knn <-  function(data, group = "Private"){
-  lda.out <- lda(
-    formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
-                                     collapse = "+"))),
-    data = data)
+knn_analysis <-  function(data, group = "Private", datatype, testk){
+  #In this function, we test a knn approach with several different values of K and we choose the one with the highest hit rate. If there are ties for the best hit rate, we choose the lowest K
+  #testk is a vector for all values of K that should be tried.
+  K <- length(unique(levels(data[,group])))
+  positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
+  negativelevel <-  levels(data[,group])[-K]
+  output <- data.frame(hitrate = NA,
+                    sensitivity = NA,
+                    specificity = NA,
+                    data = datatype,
+                    method = "KNN",
+                    K = testk)
+  for (x in testk) {
+    knn.out <- knn.cv(train = data[,colnames(data) != group],
+                      cl = data[, group],
+                      k = x,
+                      prob = TRUE
+                      )
+    tab <- table(data[,group], unname(knn.out))
+    out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "KNN",
+                    K = x
+    )
+  output[x, ] <- out
+  }
+  graph <- output %>%
+    pivot_longer(cols = c("hitrate","sensitivity", "specificity"),
+                 names_to = "performance.measure", values_to = "value") %>%
+    ggplot() +
+    geom_line(aes(color = `performance.measure`, x = K, y = value)) +
+    ylab("Performance") + theme_bw() + ylim(0.6, 1)
+  selected <- which(output$hitrate == max(output$hitrate))[1]
+  return(list(graph,output[selected,]))
 }
 
 
@@ -120,7 +155,7 @@ Before we start to build models to distinguish private and non-private schools, 
 
 The test of Box to test for equality of within-group covariance matrices shows that $H_0$ of equal covariance matrices across groups is not supported by the data. However, we still report on the results from LDA (which assumes equal covariances) since the alternative, QDA, does not always perform better because lower bias of the QDA classifier mat not outweigh its higher model complexity.
 
-```{r classification, include=FALSE, message=FALSE, warning=FALSE}
+```{r classification, include=TRUE, echo = TRUE, message=FALSE, warning=FALSE}
 College_logtranfskewed <- College %>%
   mutate(Apps = log(Apps),
          Accept = log(Accept),
@@ -159,27 +194,49 @@ testlist <- list(center = College_centered,
                  )
 
 #test the difference between centroids
-testlist %>% map(function(x) Wilks_manova(x, "Private"))
+wilks_results <- testlist %>% map(function(x) Wilks_manova(x, "Private"))
 #In each dataset, H0:mu_{yes} = mu_{no} is rejected --> centroids of Private and non-private schools differ significantly
 #test the difference between centroids
-testlist %>% map(function(x) boxM_test(x, "Private"))
+boxm_results <- testlist %>% map(function(x) boxM_test(x, "Private"))
 
 #LDA
 lda_results <- map2(testlist, names(testlist), 
-                    function(x,y){lda_analysis(x,"Private", y)})
+                    function(x,y){lda_analysis(x,"Private", y)}) %>%
+  do.call("rbind", .)
   
 #QDA
 qda_results <- map2(testlist, names(testlist), 
-                    function(x,y){qda_analysis(x,"Private", y)})
+                    function(x,y){qda_analysis(x,"Private", y)}) %>%
+  do.call("rbind", .)
   
+#KNN
+knn_output <- map2(testlist, names(testlist), 
+                    function(x,y){knn_analysis(x,"Private", y, 1:100)})
+knn_results <- lapply(knn_output, function(element){
+  element[[2]] # The first element contains graphs
+})
+knn_results <- knn_results %>%
+  do.call("rbind", .)
+
+
 #bagging
 
 #random forsts
 
-#KNN
+
 
 ```
 
+For the K-nearest neighbour (KNN) approach, the function knn_cv from the *class* package is used to execute KNN with LOOCV and test values of K between 1 and 100. The model with the highest hit rate is chosen as the final model in the table. If there are multiple models with the same hit rate, the smallest K is chosen, Figure \@ref(fig:KNNgraphs) shows the results in each of the datasets.
+
+```{r KNNgraphs, echo=FALSE, include=TRUE, message=FALSE, warning=FALSE, fig.width = 8, fig.height=5, fig.cap="Evolution of hit rate, sensitivity and specificity for different K in the KNN approach. A shows the center data, B the centered data with log-transformed skewed variables, C shows the standardized data, and D the standardized data with log-transformed skewed variables."}
+knn_graphs <- lapply(knn_output, function(element){
+  element[[1]] # The first element contains graphs
+  })
+knn_graphs[[1]] + knn_graphs[[2]] + knn_graphs[[3]] + knn_graphs[[4]] +
+  plot_annotation(tag_levels = 'A') +
+  plot_layout(guides = "collect")
+```
 
 # Task 2
 
