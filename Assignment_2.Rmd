@@ -24,6 +24,7 @@ library(MASS)#lda function
 library(biotools)
 library(ISLR2)
 library(patchwork)
+library(randomForest) 
 # this package does not work for the newest version of R --> 
 # only load if the local data files are not there
 if (!file.exists(find_root_file("data/rect_constr.csv", 
@@ -142,9 +143,64 @@ knn_analysis <-  function(data, group = "Private", datatype, testk){
   return(list(graph,output[selected,]))
 }
 
+bagging_analysis <- function(data, group = "Private", datatype, ntree){
+  K <- length(unique(levels(data[,group])))
+  positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
+  negativelevel <-  levels(data[,group])[-K]
+  bagging.out <- randomForest(
+    formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
+                                     collapse = "+"))),
+    data = data,
+    mtry = K,
+    ntree = ntree,
+    importance = TRUE)
+  tab <- table(data[,group], bagging.out$predicted) #the predicted values of the input data based on out-of-bag samples.
+  out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "randomForest"
+    )
+  graph <- bagging.out$importance %>% 
+    as.data.frame %>%
+    dplyr::select(MeanDecreaseGini) %>%
+    mutate(Var = rownames( bagging.out$importance )) %>%
+    ggplot() + geom_point(aes(x=MeanDecreaseGini, y=Var)) + 
+  scale_y_discrete(limits = names(sort(bagging.out$importance[,4]))) +
+    theme_bw() + ylab("")
+  return(list(graph, out))
+}
 
-confusion <-  function(true, predicted){#two vectors of the same length for the true group classification and the predicted group classification
- #put code here to calculate hit rate, sensitivity, specificity
+RF_analysis <- function(data, group = "Private", datatype, ntree, mtry){
+  K <- length(unique(levels(data[,group])))
+  positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
+  negativelevel <-  levels(data[,group])[-K]
+  bagging.out <- randomForest(
+    formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
+                                     collapse = "+"))),
+    data = data,
+    mtry = mtry,
+    ntree = ntree,
+    importance = TRUE)
+  tab <- table(data[,group], bagging.out$predicted) #the predicted values of the input data based on out-of-bag samples.
+  out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "randomForest"
+    )
+  graph <- bagging.out$importance %>% 
+    as.data.frame %>%
+    dplyr::select(MeanDecreaseGini) %>%
+    mutate(Var = rownames( bagging.out$importance )) %>%
+    ggplot() + geom_point(aes(x=MeanDecreaseGini, y=Var)) + 
+  scale_y_discrete(limits = names(sort(bagging.out$importance[,4]))) +
+    theme_bw() + ylab("")
+  return(list(graph, out))
 }
 
 ```
@@ -221,8 +277,24 @@ knn_results <- knn_results %>%
 
 #bagging
 
-#random forsts
+bagging_output <- map2(testlist, names(testlist), 
+                    function(x,y){bagging_analysis(x, "Private", y, 
+                                              ntree = 1000)})
+bagging_results <- lapply(bagging_output, function(element){
+  element[[2]] # The first element contains graphs
+})
+bagging_results <- bagging_results %>%
+  do.call("rbind", .)
 
+#random forests
+RF_output <- map2(testlist, names(testlist), 
+                    function(x,y){RF_analysis(x, "Private", y, 
+                                              ntree = 1000, mtry = 10)})
+RF_results <- lapply(RF_output, function(element){
+  element[[2]] # The first element contains graphs
+})
+RF_results <- RF_results %>%
+  do.call("rbind", .)
 
 
 ```
