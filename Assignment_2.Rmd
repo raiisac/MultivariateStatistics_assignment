@@ -36,6 +36,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 All R scripts and the data can be found on [this GitHub repository](https://github.com/raiisac/MultivariateStatistics_assignment).
 ```{r load, include=FALSE, message=FALSE, warning=FALSE}
+#load the data and functions
 data(College)
 
 #test the difference between centroids
@@ -48,13 +49,14 @@ Wilks_manova <- function(data, group = "Private"){
   s <- summary(manova(lm.out), test = c("Wilks"))
   return(s$stats[1, "Pr(>F)"])#return the pvalue
 }
-
+#test the differences in var-cov matrix between groups
 boxM_test <- function(data, group = "Private"){
   out <- boxM(data[,colnames(data) != group], data[,group])
   return(out$p.value)#return the pvalue
 }
 
-lda_analysis <- function(data, group = "Private"){
+#execute lda with LOOCV and save the hit rate, sensitivity, and specificity
+lda_analysis <- function(data, group = "Private", datatype){
   K <- length(unique(levels(data[,group])))
   positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
   negativelevel <-  levels(data[,group])[-K]
@@ -65,17 +67,21 @@ lda_analysis <- function(data, group = "Private"){
     prior = rep(1/K, K),
     CV = TRUE)
   tab <- table(data[,group], lda.out$class)
-  #hit rate
   out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
                     sensitivity = tab[positivelevel, positivelevel] /
                       sum(tab[positivelevel,]),
                     specificity = tab[negativelevel, negativelevel] /
-                      sum(tab[negativelevel,])
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "LDA"
   )
   return(out)
 }
-
-qda_analysis <- function(data, group = "Private"){
+#execute qda with LOOCV and save the hit rate, sensitivity, and specificity
+qda_analysis <- function(data, group = "Private", datatype){
+  K <- length(unique(levels(data[,group])))
+  positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
+  negativelevel <-  levels(data[,group])[-K]
   qda.out <- qda(
     formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
                                      collapse = "+"))),
@@ -83,12 +89,13 @@ qda_analysis <- function(data, group = "Private"){
     prior = rep(1/K, K),
     CV = TRUE)
   tab <- table(data[,group], qda.out$class)
-  #hit rate
   out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
                     sensitivity = tab[positivelevel, positivelevel] /
                       sum(tab[positivelevel,]),
                     specificity = tab[negativelevel, negativelevel] /
-                      sum(tab[negativelevel,])
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "QDA"
   )
   return(out)
 }
@@ -152,16 +159,18 @@ testlist <- list(center = College_centered,
                  )
 
 #test the difference between centroids
-testlist %>% map(function(x) Wilks_manova(x,"Private"))
+testlist %>% map(function(x) Wilks_manova(x, "Private"))
 #In each dataset, H0:mu_{yes} = mu_{no} is rejected --> centroids of Private and non-private schools differ significantly
 #test the difference between centroids
-testlist %>% map(function(x) boxM_test(x,"Private"))
+testlist %>% map(function(x) boxM_test(x, "Private"))
 
 #LDA
-lda_results <- testlist %>% map(function(x) lda_analysis(x,"Private"))
+lda_results <- map2(testlist, names(testlist), 
+                    function(x,y){lda_analysis(x,"Private", y)})
   
 #QDA
-qda_results <- testlist %>% map(function(x) qda_analysis(x,"Private"))
+qda_results <- map2(testlist, names(testlist), 
+                    function(x,y){qda_analysis(x,"Private", y)})
   
 #bagging
 
