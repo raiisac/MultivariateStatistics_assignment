@@ -25,6 +25,7 @@ library(biotools)
 library(ISLR2)
 library(patchwork)
 library(randomForest) 
+library(viridis)
 # this package does not work for the newest version of R --> 
 # only load if the local data files are not there
 if (!file.exists(find_root_file("data/rect_constr.csv", 
@@ -161,7 +162,7 @@ bagging_analysis <- function(data, group = "Private", datatype, ntree){
                     specificity = tab[negativelevel, negativelevel] /
                       sum(tab[negativelevel,]),
                     data = datatype,
-                    method = "randomForest"
+                    method = "bagging"
     )
   graph <- bagging.out$importance %>% 
     as.data.frame %>%
@@ -242,7 +243,6 @@ College_logtranfskewed_std <- College_logtranfskewed %>%
   scale(center = TRUE, scale = TRUE) %>%
   as.data.frame() %>%
   mutate(Private = College$Private)
-
 testlist <- list(center = College_centered,
                  center_logtransfskewed = College_logtranfskewed_centered,
                  std = College_std,
@@ -251,7 +251,9 @@ testlist <- list(center = College_centered,
 
 #test the difference between centroids
 wilks_results <- testlist %>% map(function(x) Wilks_manova(x, "Private"))
-#In each dataset, H0:mu_{yes} = mu_{no} is rejected --> centroids of Private and non-private schools differ significantly
+#In each dataset, H0:mu_{yes} = mu_{no} is rejected --> 
+# centroids of Private and non-private schools differ significantly
+
 #test the difference between centroids
 boxm_results <- testlist %>% map(function(x) boxM_test(x, "Private"))
 
@@ -274,9 +276,7 @@ knn_results <- lapply(knn_output, function(element){
 knn_results <- knn_results %>%
   do.call("rbind", .)
 
-
 #bagging
-
 bagging_output <- map2(testlist, names(testlist), 
                     function(x,y){bagging_analysis(x, "Private", y, 
                                               ntree = 1000)})
@@ -287,25 +287,127 @@ bagging_results <- bagging_results %>%
   do.call("rbind", .)
 
 #random forests
-RF_output <- map2(testlist, names(testlist), 
+rf_output <- map2(testlist, names(testlist), 
                     function(x,y){RF_analysis(x, "Private", y, 
                                               ntree = 1000, mtry = 10)})
-RF_results <- lapply(RF_output, function(element){
+rf_results <- lapply(rf_output, function(element){
   element[[2]] # The first element contains graphs
 })
-RF_results <- RF_results %>%
+rf_results <- rf_results %>%
   do.call("rbind", .)
+```
 
+```{r compareresults, echo=FALSE, message=FALSE, warning=FALSE}
+as.data.frame(lda_results) %>% 
+  bind_rows(as.data.frame(qda_results)) %>%
+  bind_rows(as.data.frame(knn_results)) %>%
+  bind_rows(as.data.frame(bagging_results)) %>%
+  bind_rows(as.data.frame(rf_results)) %>%
+  dplyr::select(-K) %>%
+  pivot_wider(names_from = data, 
+              values_from = c(hitrate, sensitivity, specificity)) -> A
+A %>% knitr::kable(
+  caption = 'A performance comparison of the different methods',
+  digits = 3,
+  col.names = c("Method",rep(c("Centered", "Centered Logtransf",
+                   "Standardized", "Standardized Logtransf"), 3)),
+  booktabs = TRUE, 
+  valign = 't'
+) %>%
+  row_spec(0, angle = 90) %>% 
+  add_header_above(c(" ", "Hit rate" = 4, "Sensitivity" = 4, "Specificity" = 4)) %>%
+  column_spec(2, color = "white", 
+              background = spec_color(unlist(A[,2]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(3, color = "white", 
+              background = spec_color(unlist(A[,3]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(4, color = "white", 
+              background = spec_color(unlist(A[,4]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(5, color = "white", 
+              background = spec_color(unlist(A[,5]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(6, color = "white", 
+              background = spec_color(unlist(A[,6]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(7, color = "white", 
+              background = spec_color(unlist(A[,7]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(8, color = "white", 
+              background = spec_color(unlist(A[,8]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(9, color = "white", 
+              background = spec_color(unlist(A[,9]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(10, color = "white", 
+              background = spec_color(unlist(A[,10]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(11, color = "white", 
+              background = spec_color(unlist(A[,11]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(12, color = "white", 
+              background = spec_color(unlist(A[,12]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) %>%
+  column_spec(13, color = "white", 
+              background = spec_color(unlist(A[,13]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(A[,2:13]), 
+                                                     max(A[,2:13])))) 
+  
 
 ```
 
+
+
 For the K-nearest neighbour (KNN) approach, the function knn_cv from the *class* package is used to execute KNN with LOOCV and test values of K between 1 and 100. The model with the highest hit rate is chosen as the final model in the table. If there are multiple models with the same hit rate, the smallest K is chosen, Figure \@ref(fig:KNNgraphs) shows the results in each of the datasets.
 
-```{r KNNgraphs, echo=FALSE, include=TRUE, message=FALSE, warning=FALSE, fig.width = 8, fig.height=5, fig.cap="Evolution of hit rate, sensitivity and specificity for different K in the KNN approach. A shows the center data, B the centered data with log-transformed skewed variables, C shows the standardized data, and D the standardized data with log-transformed skewed variables."}
+```{r KNNgraphs, echo=FALSE, include=TRUE, message=FALSE, warning=FALSE, fig.width = 8, fig.height=5, fig.cap="Evolution of hit rate, sensitivity and specificity for different K in the KNN approach. A shows the centered data, B the centered data with log-transformed skewed variables, C shows the standardized data, and D the standardized data with log-transformed skewed variables."}
 knn_graphs <- lapply(knn_output, function(element){
   element[[1]] # The first element contains graphs
   })
 knn_graphs[[1]] + knn_graphs[[2]] + knn_graphs[[3]] + knn_graphs[[4]] +
+  plot_annotation(tag_levels = 'A') +
+  plot_layout(guides = "collect")
+```
+
+
+```{r bagginggraphs, echo=FALSE, include=TRUE, message=FALSE, warning=FALSE, fig.width = 8, fig.height=5, fig.cap="Variance importance plots for the bagging models. A shows the centered data, B the centered data with log-transformed skewed variables, C shows the standardized data, and D the standardized data with log-transformed skewed variables."}
+bagging_graphs <- lapply(bagging_output, function(element){
+  element[[1]] # The first element contains graphs
+  })
+bagging_graphs[[1]] + bagging_graphs[[2]] + bagging_graphs[[3]] + bagging_graphs[[4]] +
+  plot_annotation(tag_levels = 'A') +
+  plot_layout(guides = "collect")
+```
+
+```{r rfgraphs, echo=FALSE, include=TRUE, message=FALSE, warning=FALSE, fig.width = 8, fig.height=5, fig.cap="Variance importance plots for the random forest models. A shows the centered data, B the centered data with log-transformed skewed variables, C shows the standardized data, and D the standardized data with log-transformed skewed variables."}
+rf_graphs <- lapply(rf_output, function(element){
+  element[[1]] # The first element contains graphs
+  })
+rf_graphs[[1]] + rf_graphs[[2]] + rf_graphs[[3]] + rf_graphs[[4]] +
   plot_annotation(tag_levels = 'A') +
   plot_layout(guides = "collect")
 ```
