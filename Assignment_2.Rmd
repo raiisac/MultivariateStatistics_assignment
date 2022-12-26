@@ -26,6 +26,14 @@ library(ISLR2)
 library(patchwork)
 library(randomForest) 
 library(viridis)
+library(GPArotation)
+library(psych) #EFA
+library(maptools)
+library(lavaan)
+library(HDclassif)
+library(mclust)
+library(fdm2id)
+
 # this package does not work for the newest version of R --> 
 # only load if the local data files are not there
 if (!file.exists(find_root_file("data/rect_constr.csv", 
@@ -488,7 +496,76 @@ rf_graphs[[1]] + rf_graphs[[2]] + rf_graphs[[3]] + rf_graphs[[4]] +
 ```{r load2, include=FALSE, message=FALSE, warning=FALSE}
 load(find_root_file("data/fashion.Rdata", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
-train.data <- train.data %>% scale(center = TRUE, scale = FALSE)
+     
+#centered variables
+zshopping<-scale(train.data,center=TRUE,scale=FALSE)
+
+##### HDclassif ######
+set.seed(20)
+
+#common dimension hddc() models "AkjBkQkD" and "AkjBQkD" with com_dim=2,3,4,5, or 6 fitted on the training data. 
+names<-list()
+ari_values<-list()
+for(model in c("AkjBkQkD", "AkjBQkD")){
+  for(dim in 2:5)
+  {
+    hddc.out<-hddc(zshopping,K=3,model=model,com_dim=dim, d_select="BIC",init="kmeans")
+    ari<-adjustedRandIndex(hddc.out$class, train.target)
+    model_name = paste(model,"_",toString(dim), sep="")
+    names <-append(names, model_name)
+    ari_values <-append(ari_values, ari)
+    print(names)
+    print(ari_values)
+  }
+}
+
+#compare models
+do.call(rbind, Map(data.frame, A=names, B=ari_values))
+
+###### mclust model ######
+set.seed(201)
+
+#Mclust() models "VVE","VEV","EVV","VVV" fitted on the first 2,3,4,5, or 6 unstandardized principal components extracted from the training data. 
+prcomp.out<-prcomp(zshopping)
+#plot(prcomp.out$sd^2)
+#cumsum(prcomp.out$sd^2/sum(prcomp.out$sd^2)) 
+comp<-zshopping%*%prcomp.out$rotation 
+
+names2<-list()
+ari_values2<-list()
+for(model in c("VVE","VEV","EVV","VVV")){
+  for(c in 2:6)
+  {
+    mclust.out<-Mclust(comp[,1:c],G=3,modelNames=model) 
+    ari<-adjustedRandIndex(mclust.out$class,train.target)
+    model_name = paste(model,"_",toString(c), sep="")
+    names2 <-append(names2, model_name)
+    ari_values2 <-append(ari_values2, ari)
+    print(names2)
+    print(ari_values2)
+  }
+}
+
+do.call(rbind, Map(data.frame, A=names2, B=ari_values2))
+
+###### the best model (highest ARI value) selected is AkjBQkD_4 ######
+
+hddc.out<-hddc(zshopping,K=3,model="AkjBQkD",com_dim=4, d_select="BIC",init="kmeans")
+ari<-adjustedRandIndex(hddc.out$class, train.target)
+
+#compute principal components
+#prcomp.out<-prcomp(zshopping)
+loading<-prcomp.out$rotation%*%diag(prcomp.out$sd)
+#print loadings first two components
+round(loading[,1:2],2)
+Z<-predict(prcomp.out,zshopping)
+
+#plot hddc solution in the space of the first two principal components
+plot(Z,xlab="PC1",ylab="PC2",main="HDDC")
+points(Z[hddc.out$class==1,],col="red")
+points(Z[hddc.out$class==2,],col="blue")
+points(Z[hddc.out$class==3,],col="green")
+
 ```
 
 # Task 3
