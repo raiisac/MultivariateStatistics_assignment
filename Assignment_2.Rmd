@@ -567,7 +567,14 @@ points(Z[hddc.out$class==2,],col="blue")
 points(Z[hddc.out$class==3,],col="green")
 
 ```
-
+To evaluate the extent to which the model-based unsupervised clustering can recover true class labels, we use the Adjusted Rand Index (ARI) based on the true and predicted class labels. Model with a higher ARI is then considered as a better model.
+ 
+When fitting the common dimnsion hddc models on the training data, with a 3-cluster  model specified as "AkjBkQkD" or "AkjBQkD", dimensions from 2 to 6, we can see that the best performing model is "AkjBQkD" with 4 dimensions (ARI = 0.937). 
+ 
+In addition, when fitting the Mclust models "VVE","VEV","EVV","VVV" on the first 2 to 6 unstandardized principal components, we can see that the best performing model is "VVE" fitted on 6 principal components (ARI = 0.9306558). Comparatively, the best hddc model outperforms the Mclust model.
+ 
+When visualizing the predicted class labels for the best clustering model in the space of the first two principal components, we can see that the space is divided into 3 parts colored each in red, green and blue. There is little overlap among the clusters, providing a visual illustration that the clustering worked well. On the other hand, when visualizing the actual class labels in the space of the first two principal components, we see some clear overlaps between two clusters.
+ 
 # Task 3
 ```{r load3, include=FALSE, message=FALSE, warning=FALSE}
 if (file.exists(find_root_file("data/rect_constr.csv", 
