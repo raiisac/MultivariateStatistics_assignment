@@ -583,9 +583,9 @@ points(Z[train.target==7,],col="green")
 ```
 To evaluate the extent to which the model-based unsupervised clustering can recover true class labels, we use the Adjusted Rand Index (ARI) based on the true and predicted class labels. Model with a higher ARI is then considered as a better model.
  
-When fitting the common dimnsion hddc models on the training data, with a 3-cluster  model specified as "AkjBkQkD" or "AkjBQkD", dimensions from 2 to 6, we can see that the best performing model is "AkjBQkD" with 4 dimensions (ARI = 0.937). 
+When fitting the common dimnsion hddc models on the training data, with a 3-cluster  model specified as "AkjBkQkD" or "AkjBQkD", dimensions from 2 to 6, we can see that the best performing model is "AkjBQkD" with 4 dimensions (ARI = 0.937). It has a BIC of -139,519,143, which is however not the lowest value among all models. The model "AkjBQkD" with 2 dimensions has a BIC of -142,899,972 and an ARI of 0.921.
  
-In addition, when fitting the Mclust models "VVE","VEV","EVV","VVV" on the first 2 to 6 unstandardized principal components, we can see that the best performing model is "VVE" fitted on 6 principal components (ARI = 0.9306558). Comparatively, the best hddc model outperforms the Mclust model.
+In addition, when fitting the Mclust models "VVE","VEV","EVV","VVV" on the first 2 to 6 unstandardized principal components, we can see that the best performing model is "VVE" fitted on 6 principal components (ARI = 0.9306558). Comparatively, the best hddc model outperforms the Mclust model in terms of ARI. Also, the BIC values of Mclust are all much higher than those of hdcc models. 
  
 When visualizing the predicted class labels for the best clustering model in the space of the first two principal components, we can see that the space is divided into 3 parts colored each in red, green and blue. There is little overlap among the clusters, providing a visual illustration that the clustering worked well. On the other hand, when visualizing the actual class labels in the space of the first two principal components, we see some clear overlaps between two clusters.
  
