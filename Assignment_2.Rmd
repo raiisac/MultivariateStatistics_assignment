@@ -506,6 +506,7 @@ set.seed(20)
 #common dimension hddc() models "AkjBkQkD" and "AkjBQkD" with com_dim=2,3,4,5, or 6 fitted on the training data. 
 names<-list()
 ari_values<-list()
+bic<-list()
 for(model in c("AkjBkQkD", "AkjBQkD")){
   for(dim in 2:5)
   {
@@ -514,13 +515,14 @@ for(model in c("AkjBkQkD", "AkjBQkD")){
     model_name = paste(model,"_",toString(dim), sep="")
     names <-append(names, model_name)
     ari_values <-append(ari_values, ari)
+    bic<-append(bic, hddc.out$BIC)
     print(names)
     print(ari_values)
   }
 }
 
 #compare models
-do.call(rbind, Map(data.frame, A=names, B=ari_values))
+do.call(rbind, Map(data.frame, A=names, B=ari_values, C=bic))
 
 ###### mclust model ######
 set.seed(201)
@@ -533,6 +535,7 @@ comp<-zshopping%*%prcomp.out$rotation
 
 names2<-list()
 ari_values2<-list()
+bic2<-list()
 for(model in c("VVE","VEV","EVV","VVV")){
   for(c in 2:6)
   {
@@ -541,17 +544,22 @@ for(model in c("VVE","VEV","EVV","VVV")){
     model_name = paste(model,"_",toString(c), sep="")
     names2 <-append(names2, model_name)
     ari_values2 <-append(ari_values2, ari)
+    bic2<-append(bic2,mclust.out$bic)
     print(names2)
     print(ari_values2)
   }
 }
 
-do.call(rbind, Map(data.frame, A=names2, B=ari_values2))
+do.call(rbind, Map(data.frame, A=names2, B=ari_values2, C=bic2))
 
 ###### the best model (highest ARI value) selected is AkjBQkD_4 ######
 
 hddc.out<-hddc(zshopping,K=3,model="AkjBQkD",com_dim=4, d_select="BIC",init="kmeans")
 ari<-adjustedRandIndex(hddc.out$class, train.target)
+
+tab<-table(hddc.out$class,train.target)
+#switch class labels to have maximum correspondance
+mapClass(hddc.out$class,train.target) 
 
 #compute principal components
 #prcomp.out<-prcomp(zshopping)
@@ -561,11 +569,17 @@ round(loading[,1:2],2)
 Z<-predict(prcomp.out,zshopping)
 
 #plot hddc solution in the space of the first two principal components
-plot(Z,xlab="PC1",ylab="PC2",main="HDDC")
+plot(Z,xlab="PC1",ylab="PC2",main="Best model")
 points(Z[hddc.out$class==1,],col="red")
 points(Z[hddc.out$class==2,],col="blue")
 points(Z[hddc.out$class==3,],col="green")
 
+#plot actual label in the space of the first two principal components
+plot(Z,xlab="PC1",ylab="PC2",main="Actual label")
+points(Z[train.target==0,],col="red")
+points(Z[train.target==1,],col="blue")
+points(Z[train.target==7,],col="green")
+ 
 ```
 To evaluate the extent to which the model-based unsupervised clustering can recover true class labels, we use the Adjusted Rand Index (ARI) based on the true and predicted class labels. Model with a higher ARI is then considered as a better model.
  
