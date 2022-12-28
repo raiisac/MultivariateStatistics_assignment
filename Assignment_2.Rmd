@@ -679,6 +679,11 @@ round(cor(m3$conf,zrect_constr),3)
 plot(bimorse, main = "Biplot Vector Representation", vecscale = 0.8, 
   xlim = c(-1.5, 1.5), ylim=c(-1.5,1.5), vec.conf = list(col = "brown"), pch ='', cex = 0.5)
 ```
+The results show that stress-1 is lowest using ordinal MDS.(0.089) Since it is between 0.05 and 0.1, it is a fair fit. Another two options to better assess goodness of fit, are stress norm and permutation test. we can see that the stress-1 obtained on the real datadaset (0.089) is much lower than the mean of the stress random data. Similarly, it is much lower than the mean of the distribution from the stress permulated data. We can thus conclude that it is a satisfactory fit.
+
+From the jackknife plot, we can see that the solution is quite stable, because the positions of the points do not change much. The stability measure by jackmds is 0.998, also confirming that the solution is very stable.
+
+# To-do: explain MDS biplot when running multivariate linear regression of variables on configuration 
 
 # Appendix
 
