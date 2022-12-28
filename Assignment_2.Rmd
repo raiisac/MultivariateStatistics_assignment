@@ -661,7 +661,7 @@ plot(jack.car,xlim=c(-1.2,1.2),ylim=c(-1,1))
 #compute MDS biplot: run multivariate linear regression of 
 #external variables on configuration 
 
-zrect_constr<-scale(rect_constr,center=TRUE,scale=TRUE)
+zrect_constr<-rect_constr
 
 #biplot MDS: regression of standardized external variables on configuration dimensions
 bimorse <- biplotmds(m3, zrect_constr, scale=TRUE)   
@@ -683,7 +683,8 @@ The results show that stress-1 is lowest using ordinal MDS.(0.089) Since it is b
 
 From the jackknife plot, we can see that the solution is quite stable, because the positions of the points do not change much. The stability measure by jackmds is 0.998, also confirming that the solution is very stable.
 
-# To-do: explain MDS biplot when running multivariate linear regression of variables on configuration 
+When projecting the external variables height and width in the MDS solution, we can see from the coefficients and the plot that if D1 increases one unit, the predicted average height of rectangles will decrease 1.623 standard deviations, and if D2 increases one unit, the predicted average height will increase 0.334 standard deviations. On the other hand,  if D2 increases one unit, the predicted average width of rectangles will increase 2.778 standard deviations, and if D1 increases one unit, the predicted average width will increase 0.096 standard deviations. We also see that D1 and D2 account for 98.7% of the variation in the height around its mean, and 94.5% of the variation in the width around its mean. The correlations of D1 and D2 with the external variables show that the first dimension has a strong negative correlation with the height (cor=-0.987), and that the second dimension has rather strong positive correlation with the width (0.970).
+
 
 # Appendix
 
