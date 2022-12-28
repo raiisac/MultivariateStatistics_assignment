@@ -609,6 +609,75 @@ if (file.exists(find_root_file("data/rectangles.csv",
 } else {
   data(rectangles) 
 }
+
+library(smacof)
+data(rectangles)
+data(rect_constr)
+
+#ratio 
+m1<-smacofSym(delta=rectangles, ndim=2, type="ratio", init="torgerson")
+#interval
+m2<-smacofSym(delta=rectangles, ndim=2, type="interval", init="torgerson")
+#ordinal
+m3<-smacofSym(delta=rectangles, ndim=2, type="ordinal", init="torgerson")
+#spline
+m4<-smacofSym(delta=rectangles, ndim=2 ,type="mspline",spline.degree =4 , spline.intKnots = 4, init="torgerson")
+
+#stress-1 values
+round(c(m1$stress,m2$stress,m3$stress,m4$stress),3)
+
+#The results show that stress-1 is lowest using ordinal MDS.(0.089)
+#Since it is between 0.05 and 0.1, it is a fair fit.
+#Another two optiosn to better assess goodness of fit, is through stress norm and permutation test.
+
+par(mfrow=c(2,2))
+plot(m3,plot.type="resplot",main="residual plot ordinal MDS")
+plot(m3,plot.type="Shepard",main="Shepard diagram ordinal MDS")
+plot(m4,plot.type="resplot",main="residual plot spline MDS")
+plot(m4,plot.type="Shepard",main="Shepard diagram spline MDS")
+
+#configuration ordinal MDS
+
+plot(m3,plot.type="conf",main="configuration ordinal MDS",pch='',label.conf = list(label = TRUE, pos = 3, col = 1, cex = 1.5))
+
+#check goodness of fit using stress-norms and permutation test
+#stress norm
+set.seed(1)
+rstress.m3<-randomstress(n=16,ndim=2,nrep=500,type="ordinal")
+#distribution of stress for random data
+mean(rstress.m3)-2*sd(rstress.m3)
+#permutation test
+set.seed(1)
+perm.m3<-permtest(m3,nrep=500)
+#plot distribution stress
+par(mfrow=c(1,2))
+hist(rstress.m3,main="stress random data")
+hist(perm.m3$stressvec,main="stress permuted data")
+
+#stability of solution using jackknife
+jack.car<-jackmds(m3)
+plot(jack.car,xlim=c(-1.2,1.2),ylim=c(-1,1))
+
+#compute MDS biplot: run multivariate linear regression of 
+#external variables on configuration 
+
+zrect_constr<-scale(rect_constr,center=TRUE,scale=TRUE)
+
+#biplot MDS: regression of standardized external variables on configuration dimensions
+bimorse <- biplotmds(m3, zrect_constr, scale=TRUE)   
+
+#print coefficients
+round(coef(bimorse),3)
+
+#print R-square of regressions
+round(bimorse$R2vec,3)
+
+#print correlations of dimensions and external variables
+round(cor(m3$conf,zrect_constr),3)
+
+# project external variables in the MDS solution
+plot(bimorse, main = "Biplot Vector Representation", vecscale = 0.8, 
+  xlim = c(-1.5, 1.5), ylim=c(-1.5,1.5), vec.conf = list(col = "brown"), pch ='', cex = 0.5)
 ```
 
 # Appendix
