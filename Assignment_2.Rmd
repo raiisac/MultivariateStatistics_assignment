@@ -594,9 +594,9 @@ To evaluate the extent to which the model-based unsupervised clustering can reco
  
 When fitting the common dimension hddc models on the training data, with a 3-cluster  model specified as "AkjBkQkD" or "AkjBQkD", dimensions from 2 to 6 (Table \@ref(tab:showhddc)), we can see that the best performing model is "AkjBQkD" with 4 dimensions (ARI = `r round(max(compare_hddc$B),3)`). It has a BIC of `r round(compare_hddc[compare_hddc$B == max(compare_hddc$B),"C"],3)`, which is however not the lowest value among all models. The model "AkjBQkD" with 2 dimensions has a BIC of `r round(compare_hddc[compare_hddc$C == min(compare_hddc$C),"C"],3)` and an ARI of `r round(compare_hddc[compare_hddc$C == min(compare_hddc$C),"B"],3)`.
  
-In addition, when fitting the Mclust models "VVE","VEV","EVV","VVV" on the first 2 to 6 unstandardized principal components (Table \@ref(tab:showmclust)), we can see that the best performing model is "VVE" fitted on 6 principal components (ARI = 0.9306558). Comparatively, the best hddc model outperforms the Mclust model in terms of ARI. Also, the BIC values of Mclust are all much higher than those of hdcc models. 
+In addition, when fitting the Mclust models "VVE","VEV","EVV","VVV" on the first 2 to 6 unstandardized principal components (Table \@ref(tab:showmclust)), we can see that the best performing model is "VVE" fitted on 6 principal components (ARI = `r round(max(compare_hddc$B),3)`). Comparatively, the best hddc model outperforms the Mclust model in terms of ARI. Also, the BIC values of Mclust are all much higher than those of hdcc models. 
  
-When visualizing the predicted class labels for the best clustering model in the space of the first two principal components, we can see that the space is divided into 3 parts colored each in red, green and blue. There is little overlap among the clusters, providing a visual illustration that the clustering worked well. On the other hand, when visualizing the actual class labels in the space of the first two principal components, we see some clear overlaps between two clusters.
+When visualizing the predicted class labels for the best clustering model in the space of the first two principal components, we can see that the space is divided into 3 parts colored each in red, green and blue (Figure \@ref(fig:bestplots)). There is little overlap among the clusters, providing a visual illustration that the clustering worked well. On the other hand, when visualizing the actual class labels in the space of the first two principal components, we see some clear overlaps between two clusters.
  
 # Task 3
 ```{r load3, include=FALSE, message=FALSE, warning=FALSE}
@@ -622,77 +622,101 @@ if (file.exists(find_root_file("data/rectangles.csv",
 library(smacof)
 data(rectangles)
 data(rect_constr)
-
+```
+```{r include=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
 #ratio 
-m1<-smacofSym(delta=rectangles, ndim=2, type="ratio", init="torgerson")
+m1 <- smacofSym(delta = rectangles, ndim = 2, type = "ratio", init = "torgerson")
 #interval
-m2<-smacofSym(delta=rectangles, ndim=2, type="interval", init="torgerson")
+m2 <- smacofSym(delta = rectangles, ndim = 2, type = "interval", init = "torgerson")
 #ordinal
-m3<-smacofSym(delta=rectangles, ndim=2, type="ordinal", init="torgerson")
+m3 <- smacofSym(delta = rectangles, ndim = 2, type = "ordinal", init = "torgerson")
 #spline
-m4<-smacofSym(delta=rectangles, ndim=2 ,type="mspline",spline.degree =4 , spline.intKnots = 4, init="torgerson")
-
+m4 <- smacofSym(delta = rectangles, ndim = 2, type = "mspline", 
+                spline.degree = 4, spline.intKnots = 4, init = "torgerson")
 #stress-1 values
-round(c(m1$stress,m2$stress,m3$stress,m4$stress),3)
+round(c(m1$stress, m2$stress, m3$stress, m4$stress), 3)
+```
 
-#The results show that stress-1 is lowest using ordinal MDS.(0.089)
-#Since it is between 0.05 and 0.1, it is a fair fit.
-#Another two optiosn to better assess goodness of fit, is through stress norm and permutation test.
+```{r shephard, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Residual plots and Shepard diagrams for ordinal and spline MDS."}
+par(mfrow = c(2,2))
+plot(m3,plot.type = "resplot", main = "residual plot ordinal MDS")
+plot(m3,plot.type = "Shepard", main = "Shepard diagram ordinal MDS")
+plot(m4,plot.type = "resplot", main = "residual plot spline MDS")
+plot(m4,plot.type = "Shepard", main = "Shepard diagram spline MDS")
+```
 
-par(mfrow=c(2,2))
-plot(m3,plot.type="resplot",main="residual plot ordinal MDS")
-plot(m3,plot.type="Shepard",main="Shepard diagram ordinal MDS")
-plot(m4,plot.type="resplot",main="residual plot spline MDS")
-plot(m4,plot.type="Shepard",main="Shepard diagram spline MDS")
-
+```{r ordinalMDS, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Configuration ordinal MDS."}
 #configuration ordinal MDS
+plot(m3, plot.type = "conf", main = "configuration ordinal MDS", pch = '', 
+     label.conf = list(label = TRUE, pos = 3, col = 1, cex = 1.5))
+```
 
-plot(m3,plot.type="conf",main="configuration ordinal MDS",pch='',label.conf = list(label = TRUE, pos = 3, col = 1, cex = 1.5))
-
+```{r include=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
 #check goodness of fit using stress-norms and permutation test
 #stress norm
 set.seed(1)
-rstress.m3<-randomstress(n=16,ndim=2,nrep=500,type="ordinal")
+rstress.m3 <- randomstress(n = 16, ndim = 2, nrep = 500, type = "ordinal")
 #distribution of stress for random data
-mean(rstress.m3)-2*sd(rstress.m3)
+distr_stress <- mean(rstress.m3) - 2 * sd(rstress.m3)
 #permutation test
 set.seed(1)
-perm.m3<-permtest(m3,nrep=500)
-#plot distribution stress
-par(mfrow=c(1,2))
-hist(rstress.m3,main="stress random data")
-hist(perm.m3$stressvec,main="stress permuted data")
-
+perm.m3 <- permtest(m3, nrep = 500)
 #stability of solution using jackknife
-jack.car<-jackmds(m3)
-plot(jack.car,xlim=c(-1.2,1.2),ylim=c(-1,1))
+jack.car <- jackmds(m3)
+```
 
+```{r distrstress, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Distribution of stress."}
+#plot distribution stress
+par(mfrow = c(1,2))
+hist(rstress.m3, main = "stress random data")
+hist(perm.m3$stressvec, main = "stress permuted data")
+```
+
+
+```{r stability, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Jackknife plot and biplot."}
 #compute MDS biplot: run multivariate linear regression of 
 #external variables on configuration 
-
-zrect_constr<-rect_constr
+zrect_constr <- rect_constr
 
 #biplot MDS: regression of standardized external variables on configuration dimensions
-bimorse <- biplotmds(m3, zrect_constr, scale=TRUE)   
+bimorse <- biplotmds(m3, zrect_constr, scale = TRUE)   
 
-#print coefficients
-round(coef(bimorse),3)
+#coefficients
+bimorse_coef <- round(coef(bimorse), 3)
 
 #print R-square of regressions
-round(bimorse$R2vec,3)
+bimorse_r2 <- round(bimorse$R2vec, 3)
 
 #print correlations of dimensions and external variables
-round(cor(m3$conf,zrect_constr),3)
+bimorse_corr <- round(cor(m3$conf, zrect_constr), 3)
 
+
+par(mfrow = c(1,2))
+plot(jack.car, xlim = c(-1.2, 1.2), ylim = c(-1, 1))
 # project external variables in the MDS solution
 plot(bimorse, main = "Biplot Vector Representation", vecscale = 0.8, 
-  xlim = c(-1.5, 1.5), ylim=c(-1.5,1.5), vec.conf = list(col = "brown"), pch ='', cex = 0.5)
+  xlim = c(-1.5, 1.5), ylim = c(-1.5, 1.5), vec.conf = list(col = "brown"), 
+  pch = '', cex = 0.5)
 ```
-The results show that stress-1 is lowest using ordinal MDS.(0.089) Since it is between 0.05 and 0.1, it is a fair fit. Another two options to better assess goodness of fit, are stress norm and permutation test. we can see that the stress-1 obtained on the real datadaset (0.089) is much lower than the mean of the stress random data. Similarly, it is much lower than the mean of the distribution from the stress permulated data. We can thus conclude that it is a satisfactory fit.
+
+
+```{r table3, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A comparison of the best models with the true, actual labels."}
+tab <- bimorse_coef %>%
+  rbind(bimorse_corr) %>%
+  rbind(bimorse_r2) 
+rownames(tab)[5] <- "Rsquared"
+tab %>%
+  kable(booktabs = TRUE,
+        caption = "MDS solution") %>%
+  group_rows(1,2, group_label = "Coefficients") %>%
+  group_rows(3,4, group_label = "Correlations") 
+```
+
+The results show that stress-1 is lowest using ordinal MDS.(0.089) Since it is between 0.05 and 0.1, it is a fair fit. Another two options to better assess goodness of fit, are stress norm and permutation test. we can see that the stress-1 obtained on the real dataset (0.089) is much lower than the mean of the stress random data. Similarly, it is much lower than the mean of the distribution from the stress permuted data. We can thus conclude that it is a satisfactory fit.
 
 From the jackknife plot, we can see that the solution is quite stable, because the positions of the points do not change much. The stability measure by jackmds is 0.998, also confirming that the solution is very stable.
 
-When projecting the external variables height and width in the MDS solution, we can see from the coefficients and the plot that if D1 increases one unit, the predicted average height of rectangles will decrease 1.623 standard deviations, and if D2 increases one unit, the predicted average height will increase 0.334 standard deviations. On the other hand,  if D2 increases one unit, the predicted average width of rectangles will increase 2.778 standard deviations, and if D1 increases one unit, the predicted average width will increase 0.096 standard deviations. We also see that D1 and D2 account for 98.7% of the variation in the height around its mean, and 94.5% of the variation in the width around its mean. The correlations of D1 and D2 with the external variables show that the first dimension has a strong negative correlation with the height (cor=-0.987), and that the second dimension has rather strong positive correlation with the width (0.970).
+When projecting the external variables height and width in the MDS solution, we can see from the coefficients and the plot that if D1 increases one unit, the predicted average height of rectangles will decrease 1.623 standard deviations, and if D2 increases one unit, the predicted average height will increase 0.334 standard deviations. On the other hand,  if D2 increases one unit, the predicted average width of rectangles will increase 2.778 standard deviations, and if D1 increases one unit, the predicted average width will increase 0.096 standard deviations. We also see that D1 and D2 account for 98.7% of the variation in the height around its mean, and 94.5% of the variation in the width around its mean. The correlations of D1 and D2 with the external variables show that the first dimension has a strong negative correlation with the height (cor = -0.987), and that the second dimension has rather strong positive correlation with the width (0.970).
 
 
 # Appendix
