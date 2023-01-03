@@ -599,6 +599,7 @@ In addition, when fitting the Mclust models "VVE","VEV","EVV","VVV" on the first
 When visualizing the predicted class labels for the best clustering model in the space of the first two principal components, we can see that the space is divided into 3 parts colored each in red, green and blue (Figure \@ref(fig:bestplots)). There is little overlap among the clusters, providing a visual illustration that the clustering worked well. On the other hand, when visualizing the actual class labels in the space of the first two principal components, we see some clear overlaps between two clusters.
  
 # Task 3
+At first, we import the related data files and libraries to the R environment. 
 ```{r load3, include=FALSE, message=FALSE, warning=FALSE}
 if (file.exists(find_root_file("data/rect_constr.csv", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))) {
@@ -623,6 +624,8 @@ library(smacof)
 data(rectangles)
 data(rect_constr)
 ```
+
+Multidimensional scaling on a symmetric dissimilarity matrix is being used in the following section. The function smacofSym() is used to demonstrate to fit the model with 4 levels which are ratio, interval, orfinal and spline respectively.
 ```{r include=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
 #ratio 
 m1 <- smacofSym(delta = rectangles, ndim = 2, type = "ratio", init = "torgerson")
@@ -637,6 +640,8 @@ m4 <- smacofSym(delta = rectangles, ndim = 2, type = "mspline",
 round(c(m1$stress, m2$stress, m3$stress, m4$stress), 3)
 ```
 
+The following shows the Residual Plot and Shepard Diagram with respect to Ordinal MDS and Spline MDs. 
+
 ```{r shephard, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Residual plots and Shepard diagrams for ordinal and spline MDS."}
 par(mfrow = c(2,2))
 plot(m3,plot.type = "resplot", main = "residual plot ordinal MDS")
@@ -650,6 +655,8 @@ plot(m4,plot.type = "Shepard", main = "Shepard diagram spline MDS")
 plot(m3, plot.type = "conf", main = "configuration ordinal MDS", pch = '', 
      label.conf = list(label = TRUE, pos = 3, col = 1, cex = 1.5))
 ```
+
+In order to check the goodness of fit whether it is in a satisfactory level, stress norms and a permutation test are used.
 
 ```{r include=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
 #check goodness of fit using stress-norms and permutation test
