@@ -317,25 +317,20 @@ testlist <- list(center = College_centered,
                  std = College_std,
                  std_logtransfskewed = College_logtranfskewed_std
                  )
-
 #test the difference between centroids
-wilks_results <- testlist %>% map(function(x) Wilks_manova(x, "Private"))
+wilks_results <- testlist %>% purrr::map(function(x) Wilks_manova(x, "Private"))
 #In each dataset, H0:mu_{yes} = mu_{no} is rejected --> 
 # centroids of Private and non-private schools differ significantly
-
 #test the difference between centroids
-boxm_results <- testlist %>% map(function(x) boxM_test(x, "Private"))
-
+boxm_results <- testlist %>% purrr::map(function(x) boxM_test(x, "Private"))
 #LDA
 lda_results <- map2(testlist, names(testlist), 
                     function(x,y){lda_analysis(x,"Private", y)}) %>%
   do.call("rbind", .)
-  
 #QDA
 qda_results <- map2(testlist, names(testlist), 
                     function(x,y){qda_analysis(x,"Private", y)}) %>%
   do.call("rbind", .)
-  
 #KNN
 knn_output <- map2(testlist, names(testlist), 
                     function(x,y){knn_analysis(x,"Private", y, 1:100)})
@@ -344,7 +339,6 @@ knn_results <- lapply(knn_output, function(element){
 })
 knn_results <- knn_results %>%
   do.call("rbind", .)
-
 #bagging
 bagging_output <- map2(testlist, names(testlist), 
                     function(x,y){bagging_analysis(x, "Private", y, 
@@ -354,7 +348,6 @@ bagging_results <- lapply(bagging_output, function(element){
 })
 bagging_results <- bagging_results %>%
   do.call("rbind", .)
-
 #random forests
 rf_output <- map2(testlist, names(testlist), 
                     function(x,y){RF_analysis(x, "Private", y, 
@@ -597,7 +590,9 @@ When fitting the common dimension hddc models on the training data, with a 3-clu
 In addition, when fitting the Mclust models "VVE","VEV","EVV","VVV" on the first 2 to 6 unstandardized principal components (Table \@ref(tab:showmclust)), we can see that the best performing model is "VVE" fitted on 6 principal components (ARI = `r round(max(compare_hddc$B),3)`). Comparatively, the best hddc model outperforms the Mclust model in terms of ARI. Also, the BIC values of Mclust are all much higher than those of hdcc models. 
  
 When visualizing the predicted class labels for the best clustering model in the space of the first two principal components, we can see that the space is divided into 3 parts colored each in red, green and blue (Figure \@ref(fig:bestplots)). There is little overlap among the clusters, providing a visual illustration that the clustering worked well. On the other hand, when visualizing the actual class labels in the space of the first two principal components, we see some clear overlaps between two clusters.
- 
+
+\clearpage
+
 # Task 3
 ```{r load3, include=FALSE, message=FALSE, warning=FALSE}
 if (file.exists(find_root_file("data/rect_constr.csv", 
@@ -618,12 +613,12 @@ if (file.exists(find_root_file("data/rectangles.csv",
 } else {
   data(rectangles) 
 }
-
 library(smacof)
 data(rectangles)
 data(rect_constr)
 ```
-```{r include=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
+
+```{r smacofs, results='hide', echo=TRUE, message=FALSE, warning=FALSE}
 #ratio 
 m1 <- smacofSym(delta = rectangles, ndim = 2, type = "ratio", init = "torgerson")
 #interval
@@ -635,6 +630,43 @@ m4 <- smacofSym(delta = rectangles, ndim = 2, type = "mspline",
                 spline.degree = 4, spline.intKnots = 4, init = "torgerson")
 #stress-1 values
 round(c(m1$stress, m2$stress, m3$stress, m4$stress), 3)
+```
+
+```{r gofsm, results='hide', echo=TRUE, message=FALSE, warning=FALSE}
+#check goodness of fit using stress-norms and permutation test
+#stress norm
+set.seed(1)
+rstress.m1 <- randomstress(n = 16, ndim = 2, nrep = 500, type = "ratio")
+rstress.m2 <- randomstress(n = 16, ndim = 2, nrep = 500, type = "interval")
+rstress.m3 <- randomstress(n = 16, ndim = 2, nrep = 500, type = "ordinal")
+rstress.m4 <- randomstress(n = 16, ndim = 2, nrep = 500, type = "mspline")
+#distribution of stress for random data
+distr_stress1 <- mean(rstress.m1) - 2 * sd(rstress.m1)
+distr_stress2 <- mean(rstress.m2) - 2 * sd(rstress.m2)
+distr_stress3 <- mean(rstress.m3) - 2 * sd(rstress.m3)
+distr_stress4 <- mean(rstress.m4) - 2 * sd(rstress.m4)
+#permutation test
+set.seed(1)
+perm.m1 <- permtest(m1, nrep = 500)
+perm.m2 <- permtest(m2, nrep = 500)
+perm.m3 <- permtest(m3, nrep = 500)
+perm.m4 <- permtest(m4, nrep = 500)
+#stability of solution using jackknife
+jack.car <- jackmds(m3)
+```
+
+```{r MDSresults, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  method = c("ratio", "interval", "ordinal", "mspline"),
+  stress1 = c(m1$stress, m2$stress, m3$stress, m4$stress),
+  stressnorm = c(distr_stress1, distr_stress2, distr_stress3, distr_stress4),
+  perm = c(mean(perm.m1$stressvec), mean(perm.m2$stressvec), 
+           mean(perm.m3$stressvec), mean(perm.m4$stressvec))
+) %>%
+  kable(booktabs = TRUE,
+        caption = "Stress-1, mean-2*standard deviation for stress norm test, and mean for the permutation test.",
+        col.names = c("measurement levels", "stress-1", "stress norm","permutation test"),
+        digits = 3)
 ```
 
 ```{r shephard, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Residual plots and Shepard diagrams for ordinal and spline MDS."}
@@ -651,20 +683,6 @@ plot(m3, plot.type = "conf", main = "configuration ordinal MDS", pch = '',
      label.conf = list(label = TRUE, pos = 3, col = 1, cex = 1.5))
 ```
 
-```{r include=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
-#check goodness of fit using stress-norms and permutation test
-#stress norm
-set.seed(1)
-rstress.m3 <- randomstress(n = 16, ndim = 2, nrep = 500, type = "ordinal")
-#distribution of stress for random data
-distr_stress <- mean(rstress.m3) - 2 * sd(rstress.m3)
-#permutation test
-set.seed(1)
-perm.m3 <- permtest(m3, nrep = 500)
-#stability of solution using jackknife
-jack.car <- jackmds(m3)
-```
-
 ```{r distrstress, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Distribution of stress."}
 #plot distribution stress
 par(mfrow = c(1,2))
@@ -673,10 +691,10 @@ hist(perm.m3$stressvec, main = "stress permuted data")
 ```
 
 
-```{r stability, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Jackknife plot and biplot."}
+```{r stability, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Jackknife plot and biplot.", fig.height = 8, fig.width=5}
 #compute MDS biplot: run multivariate linear regression of 
 #external variables on configuration 
-zrect_constr <- rect_constr
+zrect_constr <- scale(rect_constr, center = TRUE)
 
 #biplot MDS: regression of standardized external variables on configuration dimensions
 bimorse <- biplotmds(m3, zrect_constr, scale = TRUE)   
@@ -691,11 +709,11 @@ bimorse_r2 <- round(bimorse$R2vec, 3)
 bimorse_corr <- round(cor(m3$conf, zrect_constr), 3)
 
 
-par(mfrow = c(1,2))
+par(mfrow = c(2,1))
 plot(jack.car, xlim = c(-1.2, 1.2), ylim = c(-1, 1))
 # project external variables in the MDS solution
 plot(bimorse, main = "Biplot Vector Representation", vecscale = 0.8, 
-  xlim = c(-1.5, 1.5), ylim = c(-1.5, 1.5), vec.conf = list(col = "brown"), 
+  xlim = c(-1.2, 1.2), ylim = c(-1, 2.5), vec.conf = list(col = "brown"), 
   pch = '', cex = 0.5)
 ```
 
@@ -712,11 +730,11 @@ tab %>%
   group_rows(3,4, group_label = "Correlations") 
 ```
 
-The results show that stress-1 is lowest using ordinal MDS.(0.089) Since it is between 0.05 and 0.1, it is a fair fit. Another two options to better assess goodness of fit, are stress norm and permutation test. we can see that the stress-1 obtained on the real dataset (0.089) is much lower than the mean of the stress random data. Similarly, it is much lower than the mean of the distribution from the stress permuted data. We can thus conclude that it is a satisfactory fit.
+The results show that stress-1 is lowest using ordinal MDS (`r round(m3$stress,3)`, Table \@ref(tab:MDSresults)) or spline MDS with (`r round(m4$stress,3)`) a residual plot and shephard plot for these is shown in Figure \@ref(fig:shephard). Since stress-1 is between 0.05 and 0.1 for ordinal MDS, it is a fair fit. The configuration can be seen in Figure \@ref(fig:ordinalMDS) where we see that rectangles 10 and 14 are perceived to be very similar (as are the pairs 11 & 15 and 12 & 16). Two options to better assess goodness of fit, are stress norm and permutation test (Table \@ref(tab:MDSresults)). For ordinal MDS, we can see that the stress-1 obtained on the real dataset (`r round(m3$stress,3)`) is much lower than `r round(distr_stress3,3)` (the mean $-2*$ standard deviation of the stress random data). Similarly, it is much lower than the mean of the distribution from the stress permuted data (`r round(mean(perm.m3$stressvec),3)`, Figure \@ref(fig:distrstress)). We can thus conclude that it is a satisfactory fit.
 
-From the jackknife plot, we can see that the solution is quite stable, because the positions of the points do not change much. The stability measure by jackmds is 0.998, also confirming that the solution is very stable.
+From the jackknife plot for the chosen, ordinal MDS (Figure \@ref(fig:stability)), we can see that the solution is quite stable, because the positions of the points do not change much. The stability measure reported by jackmds is `r round(jack.car$stab, 3)`, also confirming that the solution is very stable.
 
-When projecting the external variables height and width in the MDS solution, we can see from the coefficients and the plot that if D1 increases one unit, the predicted average height of rectangles will decrease 1.623 standard deviations, and if D2 increases one unit, the predicted average height will increase 0.334 standard deviations. On the other hand,  if D2 increases one unit, the predicted average width of rectangles will increase 2.778 standard deviations, and if D1 increases one unit, the predicted average width will increase 0.096 standard deviations. We also see that D1 and D2 account for 98.7% of the variation in the height around its mean, and 94.5% of the variation in the width around its mean. The correlations of D1 and D2 with the external variables show that the first dimension has a strong negative correlation with the height (cor = -0.987), and that the second dimension has rather strong positive correlation with the width (0.970).
+When projecting the external variables height and width in the MDS solution (Table \@ref(tab:table3)), we can see from the coefficients and the plot that if D1 increases one unit, the predicted average height of rectangles will decrease 1.623 standard deviations, and if D2 increases one unit, the predicted average height will increase 0.334 standard deviations. On the other hand,  if D2 increases one unit, the predicted average width of rectangles will increase 2.778 standard deviations, and if D1 increases one unit, the predicted average width will increase 0.096 standard deviations. We also see that D1 and D2 account for 98.7% of the variation in the height around its mean, and 94.5% of the variation in the width around its mean. The correlations of D1 and D2 with the external variables show that the first dimension has a strong negative correlation with the height (cor = -0.987), and that the second dimension has rather strong positive correlation with the width (0.970).
 
 
 # Appendix
