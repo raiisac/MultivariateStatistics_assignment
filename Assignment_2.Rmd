@@ -691,24 +691,21 @@ hist(perm.m3$stressvec, main = "stress permuted data")
 ```
 
 
-```{r stability, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Jackknife plot and biplot.", fig.height = 8, fig.width=5}
+```{r include=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
 #compute MDS biplot: run multivariate linear regression of 
 #external variables on configuration 
 zrect_constr <- scale(rect_constr, center = TRUE)
-
 #biplot MDS: regression of standardized external variables on configuration dimensions
 bimorse <- biplotmds(m3, zrect_constr, scale = TRUE)   
-
 #coefficients
 bimorse_coef <- round(coef(bimorse), 3)
-
 #print R-square of regressions
 bimorse_r2 <- round(bimorse$R2vec, 3)
-
 #print correlations of dimensions and external variables
 bimorse_corr <- round(cor(m3$conf, zrect_constr), 3)
+```
 
-
+```{r stability, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "Jackknife plot and biplot.", fig.height = 8, fig.width=5}
 par(mfrow = c(2,1))
 plot(jack.car, xlim = c(-1.2, 1.2), ylim = c(-1, 1))
 # project external variables in the MDS solution
