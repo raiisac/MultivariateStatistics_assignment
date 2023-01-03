@@ -44,9 +44,10 @@ if (!file.exists(find_root_file("data/rect_constr.csv",
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Task 1
 
 All R scripts and the data can be found on [this GitHub repository](https://github.com/raiisac/MultivariateStatistics_assignment).
+
+# Task 1
 ```{r load, include=FALSE, message=FALSE, warning=FALSE}
 #load the data and functions
 data(College)
@@ -269,13 +270,13 @@ RF_analysis <- function(data, group = "Private", datatype, ntree, mtry){
 
 The data consists of `r ncol(College)` variables of which the categorical variable *Private* denotes whether the school is private (*Private == Yes*) or not (*Private == No*). There are `r nrow(College)` schools in the data; `r sum(College$Private == "Yes")` (`r round(sum(College$Private == "Yes")/nrow(College)*100,2)`%) private schools and `r sum(College$Private == "No")` (`r round(sum(College$Private == "No")/nrow(College)*100,2)`%) non-private schools.
 
-Before we start to build models to distinguish private and non-private schools, Wilk's lambda test is performed where the null hypothesis states that the centroid (mean) in both groups is the same. Both in the log-transformed and the original (centered or standardized) data, this null hypothesis is rejected. This means that the centroids of private and non-private schools differ significantly. 
+A detailed outline of all functions that are used for this task can be found in the appendix and on [this GitHub repository](https://github.com/raiisac/MultivariateStatistics_assignment). Before we start to build models to distinguish private and non-private schools, Wilk's lambda test is performed where the null hypothesis states that the centroid (mean) in both groups is the same. Both in the log-transformed and the original (centered or standardized) data, this null hypothesis is rejected. This means that the centroids of private and non-private schools differ significantly. 
 
-The test of Box to test for equality of within-group covariance matrices shows that $H_0$ of equal covariance matrices across groups is not supported by the data. However, we still report on the results from LDA (which assumes equal covariances) since the alternative, QDA, does not always perform better because lower bias of the QDA classifier may not outweigh its higher model complexity.
+The test of Box to test for equality of within-group covariance matrices shows that $H_0$ of equal covariance matrices across groups is not supported by the data. However, we still report on the results from LDA (which assumes equal covariances) since the alternative, QDA, does not always perform better because the lower bias of the QDA classifier may not outweigh its higher model complexity.
 
-Table \@ref(tab:compareresults) shows all results for the different performance measures (hit rate, sensitivity and specificity) and the different datasets. overall, sensitivity (proportion of positive observations that are being correctly classified) tends to be higher than specificity (proportion of negative observations that are being correctly classified) meaning it's generally easier to detect Private schools than non-private schools.
+Table \@ref(tab:compareresults) shows all results for the different performance measures (hit rate, sensitivity and specificity) and the different datasets. Overall, sensitivity (proportion of positive observations that are being correctly classified) tends to be higher than specificity (proportion of negative observations that are being correctly classified) meaning it's generally easier to detect private schools than non-private schools.
 
-As expected it doesn't matter whether the data is standardized or centered for the QDA and LDA models and log-transforming skewed variables yields a higher hit rate in LDA and QDA. The hit rate is higher in LDA than in QDA which suggests that the true decision boundary is likely close to linear. The extra complexity of QDA is not worthwhile.
+As expected, it does not matter whether the data is standardized or centered for the QDA and LDA models and log-transforming skewed variables yields a higher hit rate in LDA and QDA. The hit rate is higher in LDA than in QDA which suggests that the true decision boundary is likely close to linear. The extra complexity of QDA is not worthwhile.
 
 It is curious that KNN works so badly on the centered data with log-transformed skewed variables. 
 The highest overall hit rate, for all datasets, is achieved in the random forest models. Bagging achieves approximately the same performance as LDA although it sacrifices specificity for higher sensitivity.
@@ -453,9 +454,9 @@ knn_graphs[[1]] + knn_graphs[[2]] + knn_graphs[[3]] + knn_graphs[[4]] +
   plot_layout(guides = "collect")
 ```
 
-For the bagging and  Random forest (RF) approach, the function randomForest from the *randomForest* package is used. 2000 bootstrapped data and trees are drawn in all models.  Figure \@ref(fig:bagginggraphs) and \@ref(fig:rfgraphs) show the importance of different variables in the final models. *F.Undergrad* and *outstate* are the most important one in all bagging and RF models. The difference in MeanDecreseGini (the mean decrease in the Gini index) between the most important variables (*F.Undergrad* and *Outstate*) and the other variables is much larger in the bagging model than in the RF models. *Enroll*, which is not at all important in the bagging models, is consistently the third most important variable in the RF models. 
+For the bagging and  Random forest (RF) approach, the function randomForest from the *randomForest* package is used. 2000 bootstrapped data and trees are drawn in all models.  Figure \@ref(fig:bagginggraphs) and \@ref(fig:rfgraphs) show the importance of different variables in the final models. *F.Undergrad* and *outstate* are the most important one in all bagging and RF models. The difference in MeanDecreaseGini (the mean decrease in the Gini index) between the most important variables (*F.Undergrad* and *Outstate*) and the other variables is much larger in the bagging model than in the RF models. *Enroll*, which is not at all important in the bagging models, is consistently the third most important variable in the RF models. 
 
-For the RF results, we try different values for the mtry parameter which is the number of variables randomly sampled as candidates at each split. The model with the highest hit rate is chosen as the final model in Table \@ref(tab:compareresults). If there are multiple models with the same hit rate, the smallest mtry is chosen, Figure \@ref(fig:rfgraphsopt) shows the results in each of the datasets. The chosen value for mtry is `r rf_results[1,'mtry']` for the centered data (\@ref(fig:rfgraphsopt)A), `r rf_results[2,'mtry']` for the centered data where the skewed variables are log-transformed (\@ref(fig:rfgraphsopt)B), `r rf_results[3,'mtry']` for the standardized data (\@ref(fig:rfgraphsopt)C), `r rf_results[4,'mtry']` for the standardized data where the skewed variables are log-transformed (\@ref(fig:rfgraphsopt)D).
+For the RF results, we try different values for the mtry parameter which is the number of variables randomly sampled as candidates at each split. The model with the highest hit rate is chosen as the final model in Table \@ref(tab:compareresults). If there are multiple models with the same hit rate, the smallest mtry is chosen, Figure \@ref(fig:rfgraphsopt) shows the results in each of the datasets. The chosen value for mtry is `r rf_results[1,'mtry']` for the centered data (Figure \@ref(fig:rfgraphsopt)A), `r rf_results[2,'mtry']` for the centered data where the skewed variables are log-transformed (Figure \@ref(fig:rfgraphsopt)B), `r rf_results[3,'mtry']` for the standardized data (Figure \@ref(fig:rfgraphsopt)C), `r rf_results[4,'mtry']` for the standardized data where the skewed variables are log-transformed (Figure \@ref(fig:rfgraphsopt)D).
 
 ```{r bagginggraphs, echo=FALSE, include=TRUE, message=FALSE, warning=FALSE, fig.width = 8, fig.height=5, fig.cap="Variance importance plots for the bagging models. A shows the centered data, B the centered data with log-transformed skewed variables, C shows the standardized data, and D the standardized data with log-transformed skewed variables."}
 bagging_graphs <- lapply(bagging_output, function(element){
@@ -494,10 +495,10 @@ load(find_root_file("data/fashion.Rdata",
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))
 #centered variables
 zshopping <- scale(train.data, center = TRUE, scale = FALSE)
-
 ##### HDclassif ######
 set.seed(20)
-#common dimension hddc() models "AkjBkQkD" and "AkjBQkD" with com_dim=2,3,4,5, or 6 fitted on the training data. 
+#common dimension hddc() models "AkjBkQkD" and "AkjBQkD" with 
+# com_dim=2,3,4,5, or 6 fitted on the training data. 
 names <- list()
 ari_values <- list()
 bic <- list()
@@ -516,12 +517,10 @@ for (model in c("AkjBkQkD", "AkjBQkD")) {
 
 ###### mclust model ######
 set.seed(201)
-#Mclust() models "VVE","VEV","EVV","VVV" fitted on the first 2,3,4,5, or 6 unstandardized principal components extracted from the training data. 
+#Mclust() models "VVE","VEV","EVV","VVV" fitted on the first 2,3,4,5, or 6 
+#unstandardized principal components extracted from the training data. 
 prcomp.out <- prcomp(zshopping)
-#plot(prcomp.out$sd^2)
-#cumsum(prcomp.out$sd^2/sum(prcomp.out$sd^2)) 
 comp <- zshopping %*% prcomp.out$rotation 
-
 names2 <- list()
 ari_values2 <- list()
 bic2 <- list()
@@ -536,7 +535,6 @@ for (model in c("VVE","VEV","EVV","VVV")) {
     bic2 <- append(bic2,mclust.out$bic)
   }
 }
-
 ###### the best model (highest ARI value) selected is AkjBQkD_4 ######
 hddc.out <- hddc(zshopping, K = 3, model = "AkjBQkD", com_dim = 4, d_select = "BIC",
                init = "kmeans")
@@ -545,7 +543,6 @@ tab <- table(hddc.out$class, train.target)
 #switch class labels to have maximum correspondance
 mapping <- mapClass(hddc.out$class, train.target) 
 #compute principal components
-#prcomp.out<-prcomp(zshopping)
 loading <- prcomp.out$rotation %*% diag(prcomp.out$sd)
 Z <- predict(prcomp.out, zshopping)
 ```
@@ -556,7 +553,17 @@ compare_hddc <- do.call(rbind, Map(data.frame, A = names, B = ari_values, C = bi
 compare_hddc %>% kable(caption = 'A comparison of HDDC models',
   digits = 3,
   col.names = c("Method_dimensions","ARI", "BIC"),
-  booktabs = TRUE)
+  booktabs = TRUE) %>%
+  column_spec(2, color = "white", 
+              background = spec_color(unlist(compare_hddc[,2]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(compare_hddc[,2]), 
+                                                     max(compare_hddc[,2])))) %>%
+  column_spec(3, color = "white", 
+              background = spec_color(unlist(compare_hddc[,3]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(compare_hddc[,3]), 
+                                                     max(compare_hddc[,3])))) 
 ```
 
 ```{r showmclust, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
@@ -564,7 +571,17 @@ compare_mclust <- do.call(rbind, Map(data.frame, A = names2, B = ari_values2, C 
 compare_mclust %>% kable(caption = 'A comparison of mclust models',
   digits = 3,
   col.names = c("Method_dimensions","ARI", "BIC"),
-  booktabs = TRUE)
+  booktabs = TRUE) %>%
+  column_spec(2, color = "white", 
+              background = spec_color(unlist(compare_mclust[,2]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(compare_mclust[,2]), 
+                                                     max(compare_mclust[,2])))) %>%
+  column_spec(3, color = "white", 
+              background = spec_color(unlist(compare_mclust[,3]), option = "viridis", 
+                                      direction = -1, 
+                                      scale_from = c(min(compare_mclust[,3]), 
+                                                     max(compare_mclust[,3]))))
 ```
 
 
@@ -573,14 +590,14 @@ par(mfrow = c(1,2))
 #plot hddc solution in the space of the first two principal components
 plot(Z, xlab = "PC1", ylab = "PC2", main = "Best model")
 points(Z[hddc.out$class == 1,], col = "red")
-points(Z[hddc.out$class == 2,], col = "blue")
 points(Z[hddc.out$class == 3,], col = "green")
+points(Z[hddc.out$class == 2,], col = "blue")
 
 #plot actual label in the space of the first two principal components
 plot(Z, xlab = "PC1", ylab = "PC2", main = "Actual label")
-points(Z[train.target == 0,], col = "red")
+points(Z[train.target == 7,], col = "red")
+points(Z[train.target == 0,], col = "green")
 points(Z[train.target == 1,], col = "blue")
-points(Z[train.target == 7,], col = "green")
 ```
 
 To evaluate the extent to which the model-based unsupervised clustering can recover true class labels, we use the Adjusted Rand Index (ARI) based on the true and predicted class labels. Model with a higher ARI is then considered as a better model.
@@ -594,7 +611,7 @@ When visualizing the predicted class labels for the best clustering model in the
 \clearpage
 
 # Task 3
-```{r load3, include=FALSE, message=FALSE, warning=FALSE}
+```{r load3, include=FALSE, message=FALSE, warning=FALSE, echo=FALSE}
 if (file.exists(find_root_file("data/rect_constr.csv", 
      criterion = has_file("MultivariateStatistics_assignment.Rproj")))) {
   rect_constr <- read.csv(
@@ -715,24 +732,232 @@ plot(bimorse, main = "Biplot Vector Representation", vecscale = 0.8,
 ```
 
 
-```{r table3, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = "A comparison of the best models with the true, actual labels."}
+```{r table3, include=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
 tab <- bimorse_coef %>%
   rbind(bimorse_corr) %>%
   rbind(bimorse_r2) 
 rownames(tab)[5] <- "Rsquared"
 tab %>%
   kable(booktabs = TRUE,
-        caption = "MDS solution") %>%
+        caption = "Ordinal MDS dimensions and their link with the external variables (width and height).") %>%
   group_rows(1,2, group_label = "Coefficients") %>%
   group_rows(3,4, group_label = "Correlations") 
 ```
 
-The results show that stress-1 is lowest using ordinal MDS (`r round(m3$stress,3)`, Table \@ref(tab:MDSresults)) or spline MDS with (`r round(m4$stress,3)`) a residual plot and shephard plot for these is shown in Figure \@ref(fig:shephard). Since stress-1 is between 0.05 and 0.1 for ordinal MDS, it is a fair fit. The configuration can be seen in Figure \@ref(fig:ordinalMDS) where we see that rectangles 10 and 14 are perceived to be very similar (as are the pairs 11 & 15 and 12 & 16). Two options to better assess goodness of fit, are stress norm and permutation test (Table \@ref(tab:MDSresults)). For ordinal MDS, we can see that the stress-1 obtained on the real dataset (`r round(m3$stress,3)`) is much lower than `r round(distr_stress3,3)` (the mean $-2*$ standard deviation of the stress random data). Similarly, it is much lower than the mean of the distribution from the stress permuted data (`r round(mean(perm.m3$stressvec),3)`, Figure \@ref(fig:distrstress)). We can thus conclude that it is a satisfactory fit.
+The results show that stress-1 is lowest using ordinal MDS (`r round(m3$stress,3)`, Table \@ref(tab:MDSresults)) or spline MDS (`r round(m4$stress,3)`). A residual plot and shephard plot for these is shown in Figure \@ref(fig:shephard). Since stress-1 is between 0.05 and 0.1 for ordinal MDS, it is a fair fit. The configuration can be seen in Figure \@ref(fig:ordinalMDS) where we see that rectangles 10 and 14 are perceived to be very similar (as are the pairs 11 & 15 and 12 & 16). Two options to better assess goodness of fit, are stress norm and permutation test (results for all measurement levels in Table \@ref(tab:MDSresults)). For ordinal MDS, we can see that the stress-1 obtained on the real dataset (`r round(m3$stress,3)`) is much lower than `r round(distr_stress3,3)` (the mean $-2*$ standard deviation of the stress random data). Similarly, it is much lower than the mean of the distribution from the stress permuted data (`r round(mean(perm.m3$stressvec),3)`, Figure \@ref(fig:distrstress)). We can thus conclude that ordinal MDS has a satisfactory fit.
 
 From the jackknife plot for the chosen, ordinal MDS (Figure \@ref(fig:stability)), we can see that the solution is quite stable, because the positions of the points do not change much. The stability measure reported by jackmds is `r round(jack.car$stab, 3)`, also confirming that the solution is very stable.
 
-When projecting the external variables height and width in the MDS solution (Table \@ref(tab:table3)), we can see from the coefficients and the plot that if D1 increases one unit, the predicted average height of rectangles will decrease 1.623 standard deviations, and if D2 increases one unit, the predicted average height will increase 0.334 standard deviations. On the other hand,  if D2 increases one unit, the predicted average width of rectangles will increase 2.778 standard deviations, and if D1 increases one unit, the predicted average width will increase 0.096 standard deviations. We also see that D1 and D2 account for 98.7% of the variation in the height around its mean, and 94.5% of the variation in the width around its mean. The correlations of D1 and D2 with the external variables show that the first dimension has a strong negative correlation with the height (cor = -0.987), and that the second dimension has rather strong positive correlation with the width (0.970).
+When projecting the external variables height and width in the MDS solution (Table \@ref(tab:table3)), we can see from the coefficients and the plot (Figure \@ref(fig:stability)) that, if D1 increases one unit, the predicted average height of rectangles will decrease 1.623 standard deviations, and if D2 increases one unit, the predicted average height will increase 0.334 standard deviations. On the other hand,  if D2 increases one unit, the predicted average width of rectangles will increase 2.778 standard deviations, and if D1 increases one unit, the predicted average width will increase 0.096 standard deviations. We also see that D1 and D2 account for 98.7% of the variation in the height around its mean, and 94.5% of the variation in the width around its mean. The correlations of D1 and D2 with the external variables show that the first dimension has a strong negative correlation with the height (cor = -0.987), and that the second dimension has rather strong positive correlation with the width (0.970).
 
 
 # Appendix
 
+Task1: code to define the functions
+
+```{r include=TRUE, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
+Wilks_manova <- function(data, group = "Private"){
+  lm.out <- lm(cbind(
+    sapply(X = colnames(data)[colnames(data) != group], 
+           FUN = function(x) get(x)))~ 
+       get((group)), 
+   data = data)
+  s <- summary(manova(lm.out), test = c("Wilks"))
+  return(s$stats[1, "Pr(>F)"])#return the pvalue
+}
+boxM_test <- function(data, group = "Private"){
+  out <- boxM(data[,colnames(data) != group], data[,group])
+  return(out$p.value)#return the pvalue
+}
+lda_analysis <- function(data, group = "Private", datatype){
+  K <- length(unique(levels(data[,group])))
+  positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
+  negativelevel <-  levels(data[,group])[-K]
+  lda.out <- lda(
+    formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
+                                     collapse = "+"))),
+    data = data,
+    prior = rep(1/K, K),
+    CV = TRUE)
+  tab <- table(data[,group], lda.out$class)
+  out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "LDA"
+  )
+  return(out)
+}
+qda_analysis <- function(data, group = "Private", datatype){
+  K <- length(unique(levels(data[,group])))
+  positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
+  negativelevel <-  levels(data[,group])[-K]
+  qda.out <- qda(
+    formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
+                                     collapse = "+"))),
+    data = data,
+    prior = rep(1/K, K),
+    CV = TRUE)
+  tab <- table(data[,group], qda.out$class)
+  out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "QDA"
+  )
+  return(out)
+}
+knn_analysis <-  function(data, group = "Private", datatype, testk){
+  K <- length(unique(levels(data[,group])))
+  positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
+  negativelevel <-  levels(data[,group])[-K]
+  output <- data.frame(hitrate = NA,
+                    sensitivity = NA,
+                    specificity = NA,
+                    data = datatype,
+                    method = "KNN",
+                    K = testk)
+  for (x in testk) {
+    knn.out <- knn.cv(train = data[,colnames(data) != group],
+                      cl = data[, group],
+                      k = x,
+                      prob = TRUE
+                      )
+    tab <- table(data[,group], unname(knn.out))
+    out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "KNN",
+                    K = x
+    )
+  output[x, ] <- out
+  }
+  graph <- output %>%
+    pivot_longer(cols = c("hitrate","sensitivity", "specificity"),
+                 names_to = "performance.measure", values_to = "value") %>%
+    ggplot() +
+    geom_line(aes(color = `performance.measure`, x = K, y = value)) +
+    ylab("Performance") + theme_bw() + ylim(0.6, 1)
+  selected <- which(output$hitrate == max(output$hitrate))[1]
+  return(list(graph,output[selected,]))
+}
+bagging_analysis <- function(data, group = "Private", datatype, ntree){
+  K <- length(unique(levels(data[,group])))
+  positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
+  negativelevel <-  levels(data[,group])[-K]
+  nvar <- ncol(data)-1
+  bagging.out <- randomForest(
+    formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
+                                     collapse = "+"))),
+    data = data,
+    mtry = nvar,
+    ntree = ntree,
+    importance = TRUE)
+  tab <- table(data[,group], bagging.out$predicted) #the predicted values of the input data based on out-of-bag samples.
+  out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "bagging"
+    )
+  graph <- bagging.out$importance %>% 
+    as.data.frame %>%
+    dplyr::select(MeanDecreaseGini) %>%
+    mutate(Var = rownames( bagging.out$importance )) %>%
+    ggplot() + geom_point(aes(x=MeanDecreaseGini, y=Var)) + 
+  scale_y_discrete(limits = names(sort(bagging.out$importance[,4]))) +
+    theme_bw() + ylab("")
+  return(list(graph, out))
+}
+RF_analysis <- function(data, group = "Private", datatype, ntree, mtry){
+  K <- length(unique(levels(data[,group])))
+  nvar <- ncol(data)-1
+  positivelevel <- levels(data[,group])[K]# by default, it is assumed the last level is the positive level
+  negativelevel <-  levels(data[,group])[-K]
+  if (mtry != "optimize") {
+    bagging.out <- randomForest(
+      formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
+                                     collapse = "+"))),
+      data = data,
+      mtry = mtry,
+      ntree = ntree,
+      importance = TRUE)
+    tab <- table(data[,group], bagging.out$predicted) #the predicted values of the input data based on out-of-bag samples.
+    out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "randomForest"
+      )
+    graph <- bagging.out$importance %>% 
+      as.data.frame %>%
+      dplyr::select(MeanDecreaseGini) %>%
+      mutate(Var = rownames( bagging.out$importance )) %>%
+      ggplot() + geom_point(aes(x=MeanDecreaseGini, y=Var)) + 
+    scale_y_discrete(limits = names(sort(bagging.out$importance[,4]))) +
+      theme_bw() + ylab("")
+    return(list(graph, out))
+  
+  }else{
+    output <- data.frame(hitrate = NA,
+                    sensitivity = NA,
+                    specificity = NA,
+                    data = datatype,
+                    method = "randomForest",
+                    mtry = 1:nvar)
+    for (mtry in 1:nvar) {
+    bagging.out <- randomForest(
+      formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
+                                     collapse = "+"))),
+      data = data,
+      mtry = mtry,
+      ntree = ntree,
+      importance = TRUE)
+    tab <- table(data[,group], bagging.out$predicted) #the predicted values of the input data based on out-of-bag samples.
+    out <- data.frame(hitrate = sum(diag(tab))/sum(tab),
+                    sensitivity = tab[positivelevel, positivelevel] /
+                      sum(tab[positivelevel,]),
+                    specificity = tab[negativelevel, negativelevel] /
+                      sum(tab[negativelevel,]),
+                    data = datatype,
+                    method = "randomForest",
+                    mtry = mtry
+      )
+  output[mtry, ] <- out
+  }
+  graphopt <- output %>%
+    pivot_longer(cols = c("hitrate","sensitivity", "specificity"),
+                 names_to = "performance.measure", values_to = "value") %>%
+    ggplot() +
+    geom_line(aes(color = `performance.measure`, x = mtry, y = value)) +
+    ylab("Performance") + theme_bw() + ylim(0.6, 1)
+  selected <- which(output$hitrate == max(output$hitrate))[1]
+  bagging.out <- randomForest(
+      formula(paste0(group, "~", paste(colnames(data)[colnames(data) != group], 
+                                     collapse = "+"))),
+      data = data,
+      mtry = output[selected,'mtry'],
+      ntree = ntree,
+      importance = TRUE)
+  graph <- bagging.out$importance %>% 
+      as.data.frame %>%
+      dplyr::select(MeanDecreaseGini) %>%
+      mutate(Var = rownames( bagging.out$importance )) %>%
+      ggplot() + geom_point(aes(x=MeanDecreaseGini, y=Var)) + 
+    scale_y_discrete(limits = names(sort(bagging.out$importance[,4]))) +
+      theme_bw() + ylab("")
+  return(list(graph, output[selected, ], graphopt))
+  }
+}
+```
